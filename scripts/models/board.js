@@ -5,6 +5,7 @@ import { King } from './pieces/king.js';
 import { Queen } from './pieces/queen.js';
 import { Pawn } from './pieces/pawn.js';
 import { MovesUtils } from '../utils/movesUtils.js';
+import { BoardUtils } from '../utils/boardUtils.js';
 
 export class Board {
     pieces;
@@ -13,10 +14,16 @@ export class Board {
 
     isWhiteTurn;
 
+    moves;
+
+    enemyAttacks;
+
     constructor() {
         this.pieces = [];
         this.isWhiteTurn = true;
+        this.moves = [];
         this.initializePieces();
+        this.enemyAttacks = this.getEnemyAttacks();
     }
 
     initializePieces() {
@@ -61,10 +68,8 @@ export class Board {
     }
 
     getPieceByPosition(x, y) {
-        return this.pieces.find((piece) => {
-            const bounds = piece.getBounds();
-            return x >= bounds.x && x <= bounds.dx && y >= bounds.y && y <= bounds.dy;
-        });
+        const position = BoardUtils.positionToPlacement(x, y);
+        return this.getPieceByPlacement(position.file, position.rank);
     }
 
     getPieceByPlacement(file, rank) {
@@ -82,26 +87,39 @@ export class Board {
     }
 
     movePiece(piece, file, rank) {
-        // Check if is allowed move
-        if (this.possibleMoves.some((move) => move.file === file && move.rank === rank)) {
+        // Get possible move
+        const move = this.possibleMoves.find((move) => move.file === file && move.rank === rank);
+        // Check if move was found
+        if (move) {
             // Check if is new placement
-            if (piece.file !== file || piece.rank !== rank) {
+            if (piece.file !== move.file || piece.rank !== move.rank) {
+                // Add piece to move and set if is pieces first move
+                move.piece = piece;
+                move.isFirstMove = piece.isFirstMove;
+
                 // Check if space is occupied
-                const residentPiece = this.pieces.find((p) => p.file === file && p.rank === rank);
+                const residentPiece = this.pieces.find((p) => p.file === move.file && p.rank === move.rank);
                 if (residentPiece && residentPiece.isWhite !== piece.isWhite) {
                     const indexToRemove = this.pieces.indexOf(residentPiece);
                     this.pieces.splice(indexToRemove, 1);
                 }
 
                 // Set piece placement
-                piece.file = file;
-                piece.rank = rank;
-                piece.isFirstMove = false;
+                piece.setPlacement(move.file, move.rank);
+
+                // Check if move had enPassant piece to capture
+                if (move.enPassant) {
+                    const indexToRemove = this.pieces.indexOf(move.enPassant);
+                    this.pieces.splice(indexToRemove, 1);
+                }
 
                 // TODO: Check if is pawn exchange for rook, knight, bishop or queen
                 //  If yes, show pieces to choose from
-                //  If piece is chosen, remove current piece from game, create new choses piece and set isFirstMove to false,
+                //  If piece is chosen, remove pawn from game, create new chosen piece and set isFirstMove to false,
                 //      otherwise and illegal castle move is possible
+
+                // Add move to moves
+                this.moves.push(move);
 
                 // Set next turn
                 this.toggleTurn();
@@ -114,35 +132,125 @@ export class Board {
 
     toggleTurn() {
         this.isWhiteTurn = !this.isWhiteTurn;
+
+        this.enemyAttacks = this.getEnemyAttacks();
     }
 
-    getMoves(piece) {
+    getEnemyAttacks() {
+        // Get enemy pieces
+        const enemyPieces = this.pieces.filter((piece) => piece.isWhite !== this.isWhiteTurn);
+
+        // Calculate moves for each piece and return
+        const enemyMoves = enemyPieces.map((piece) => this.getMoves(piece)).flat();
+
+        // Remove duplicate moves
+        MovesUtils.filterDuplicateMoves(enemyMoves);
+
+        // Return moves
+        return enemyMoves;
+    }
+
+    getMoves(movingPiece) {
         // Get possible moves
-        const moves = piece.getMoves();
+        const moves = movingPiece.getMoves();
 
         // Add moves to categories
         const horizontalMoves = [...(moves.horizontal ?? [])];
         const verticalMoves = [...(moves.vertical ?? [])];
         const diagonalMoves = [...(moves.diagonal ?? [])];
         const nonSlidingMoves = [...(moves.nonSlidingMoves ?? [])]; // Knight
+        const multiPieceMoves = this.getMultiPieceMoves(movingPiece);
 
-        // Generate multi-piece moves
-        // TODO: En passant
-        if (piece instanceof Pawn) {
-            // console.log('generate en passant');
+        // Filter out illegal moves
+        MovesUtils.truncateMoveDirections(horizontalMoves, this.pieces, movingPiece);
+        MovesUtils.truncateMoveDirections(verticalMoves, this.pieces, movingPiece);
+        MovesUtils.truncateMoveDirections(diagonalMoves, this.pieces, movingPiece);
+        MovesUtils.filterSamePieceMoves(nonSlidingMoves, this.pieces, movingPiece);
+
+        // Prevent pawn from taking enemy piece straight ahead
+        if (movingPiece instanceof Pawn) {
+            verticalMoves.forEach((moves) => MovesUtils.removeMovesWithEnemies(moves, this.pieces, movingPiece));
         }
 
-        // TODO: Castling
-        if ((piece instanceof Rook || piece instanceof King) && piece.isFirstMove) {
+        // Join all moves and return
+        const joinedMoved = [
+            ...horizontalMoves.flat(),
+            ...verticalMoves.flat(),
+            ...diagonalMoves.flat(),
+            ...nonSlidingMoves,
+            ...multiPieceMoves,
+        ];
+
+        // Remove duplicates
+        MovesUtils.filterDuplicateMoves(joinedMoved);
+
+        // Check if is king
+        if (movingPiece instanceof King) {
+            // TODO: Remove moves where enemy can attack (this.enemyAttacks)
+            // TODO: Check if move is occupied by enemy attack for king
+        }
+
+        // Return moves
+        return joinedMoved;
+    }
+
+    getMultiPieceMoves(movingPiece) {
+        const multiPieceMoves = [];
+
+        // Generate multi-piece pawn moves
+        if (movingPiece instanceof Pawn) {
+            // Pawn capture
+            let attackingSpaces = movingPiece.getAttackingSpaces();
+            MovesUtils.filterEnemyPieceMoves(attackingSpaces, this.pieces, movingPiece);
+            multiPieceMoves.push(...attackingSpaces);
+
+            // En passant
+            attackingSpaces = movingPiece.getAttackingSpaces();
+            const enPassantSpaces = movingPiece
+                .getEnPassantSpaces()
+                .map((move) =>
+                    this.pieces.find(
+                        (piece) =>
+                            piece.isWhite !== movingPiece.isWhite &&
+                            piece instanceof Pawn &&
+                            this.moves.length > 1 &&
+                            // Check if last move was the first move made by the piece
+                            this.moves[this.moves.length - 1].isFirstMove &&
+                            // Check if the last move was made by the piece current piece in loop
+                            this.moves[this.moves.length - 1].piece === piece &&
+                            piece.file === move.file &&
+                            piece.rank === move.rank,
+                    ),
+                )
+                .filter((piece) => !!piece)
+                .map((piece) => {
+                    const attackingMove = attackingSpaces.find((attackingSpace) => attackingSpace.rank === piece.rank);
+                    attackingMove.enPassant = piece;
+                    return attackingMove;
+                });
+            multiPieceMoves.push(...enPassantSpaces);
+        }
+
+        // Generate castling moves
+        if (movingPiece instanceof King && movingPiece.isFirstMove) {
+            const rooks = this.pieces.filter(
+                (piece) => piece.isFirstMove && piece.isWhite === movingPiece.isWhite && piece instanceof Rook,
+            );
+            let moves = rooks.map((rook) => {
+                let offset = rook.rank < movingPiece.rank ? -1 : 1;
+                return { file: movingPiece.file, rank: movingPiece.rank + 2 * offset, castle: rook };
+            });
+
+            // TODO: Check if there are any pieces between rook and king
+
+            // TODO: Get enemy moves
+            //  Check if any enemy move.file === king.file && move.rank between or equal to king.rank and rook.rank
+            console.log(rooks);
+            // TODO: Castling (max 2 squares away for queen side)
             // console.log('generate castle move');
         }
 
-        // Filter out illegal moves
-        MovesUtils.truncateMoveDirections(horizontalMoves, this.pieces, piece);
-        MovesUtils.truncateMoveDirections(verticalMoves, this.pieces, piece);
-        MovesUtils.truncateMoveDirections(diagonalMoves, this.pieces, piece);
-        MovesUtils.filterSamePieceMoves(nonSlidingMoves, this.pieces, piece);
-
-        return [...horizontalMoves.flat(), ...verticalMoves.flat(), ...diagonalMoves.flat(), ...nonSlidingMoves];
+        // Return multi-piece moves
+        return multiPieceMoves;
     }
 }

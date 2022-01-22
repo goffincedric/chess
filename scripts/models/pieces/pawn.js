@@ -23,4 +23,23 @@ export class Pawn extends Piece {
             nonSlidingMoves: null,
         };
     }
+
+    getAttackingSpaces() {
+        // Check directionality & limit
+        const offset = this.isWhite ? 1 : -1;
+
+        // Get attacking spaces and return
+        return [
+            { file: this.file + 1 * offset, rank: this.rank + 1 },
+            { file: this.file + 1 * offset, rank: this.rank - 1 },
+        ];
+    }
+
+    getEnPassantSpaces() {
+        // Get attacking spaces and return
+        return [
+            { file: this.file, rank: this.rank + 1 },
+            { file: this.file, rank: this.rank - 1 },
+        ];
+    }
 }

@@ -39,8 +39,7 @@ export class Piece {
     setPlacement(file, rank) {
         this.file = file;
         this.rank = rank;
-        const position = BoardUtils.placementToPosition(file, rank);
-        this.asset.set(position.x, position.y);
+        this.isFirstMove = false;
     }
 
     getPosition() {

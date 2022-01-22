@@ -15,7 +15,7 @@ function preload() {
 // Canvas initialization function, called once at start
 function setup() {
     // Set background for debug purposes
-    background(color('#833030'))
+    background(color('#833030'));
 
     // Create canvas element to draw on
     createCanvas(BOARD_SIZE, BOARD_SIZE);
@@ -35,6 +35,9 @@ function draw() {
     // Draw chess board
     drawBoard();
 
+    // Draw enemy moves
+    // drawEnemyMoves();
+
     // Draw possible moves
     drawMoves();
 
@@ -52,6 +55,17 @@ function drawBoard() {
             const position = BoardUtils.placementToPosition(file, rank);
             rect(position.x, position.y, RANK_SIZE, FILE_SIZE);
         }
+    }
+}
+
+function drawEnemyMoves() {
+    if (chessBoard.enemyAttacks?.length) {
+        // Color possible moves
+        chessBoard.enemyAttacks.forEach((move) => {
+            fill(color(COLORS.MOVES.ENEMY));
+            const position = BoardUtils.placementToPosition(move.file, move.rank);
+            rect(position.x, position.y, RANK_SIZE, FILE_SIZE);
+        });
     }
 }
 
