@@ -14,12 +14,24 @@ function preload() {
 
 // Canvas initialization function, called once at start
 function setup() {
+    // Set background for debug purposes
+    background(color('#833030'))
+
     // Create canvas element to draw on
     createCanvas(BOARD_SIZE, BOARD_SIZE);
+
+    // Draw chess board
+    drawBoard();
+
+    // Draw pieces
+    drawPieces();
 }
 
 // Canvas update function
 function draw() {
+    // Clear canvas
+    clear();
+
     // Draw chess board
     drawBoard();
 
@@ -35,7 +47,7 @@ function drawBoard() {
     noStroke();
     for (let file = 1; file <= FILES; file++) {
         for (let rank = 1; rank <= RANKS; rank++) {
-            let rectColor = color((file + rank) % 2 === 0 ? COLORS.LIGHT : COLORS.DARK);
+            let rectColor = color((file + rank) % 2 !== 0 ? COLORS.LIGHT : COLORS.DARK);
             fill(rectColor);
             const position = BoardUtils.placementToPosition(file, rank);
             rect(position.x, position.y, RANK_SIZE, FILE_SIZE);
@@ -55,7 +67,7 @@ function drawMoves() {
                 // Set color depending on if there is no piece or it is an enemy piece
                 if (!piece) {
                     rectColor = color(COLORS.MOVES.EMPTY);
-                } else if (piece.isLight !== chessBoard.movingPiece.isLight) {
+                } else if (piece.isWhite !== chessBoard.movingPiece.isWhite) {
                     rectColor = color(COLORS.MOVES.TAKE_PIECE);
                 }
 
@@ -95,7 +107,7 @@ function mousePressed() {
     if (CanvasUtils.isInCanvas(mouseX, mouseY)) {
         // Check if position has piece
         const piece = chessBoard.getPieceByPosition(mouseX, mouseY);
-        if (piece) {
+        if (piece && piece.isWhite === chessBoard.isWhiteTurn) {
             chessBoard.setMovingPiece(piece);
         }
     }
@@ -107,11 +119,7 @@ function mouseReleased() {
         // Get placement on board
         const newPlacement = BoardUtils.positionToPlacement(mouseX, mouseY);
         // Set piece to new placement
-        chessBoard.movingPiece.file = newPlacement.file;
-        chessBoard.movingPiece.rank = newPlacement.rank;
-
-        // Reset moving variables
-        chessBoard.movingPiece = null;
+        chessBoard.movePiece(chessBoard.movingPiece, newPlacement.file, newPlacement.rank);
     }
 }
 

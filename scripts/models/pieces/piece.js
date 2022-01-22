@@ -4,7 +4,7 @@ import { BoardUtils } from '../../utils/boardUtils.js';
 export class Piece {
     file;
     rank;
-    isLight;
+    isWhite;
     fenName;
     isSlidingPiece;
 
@@ -13,14 +13,15 @@ export class Piece {
     isMoving;
     isFirstMove;
 
-    constructor(file, rank, isLight, fenName, isSlidingPiece) {
+    constructor(file, rank, isWhite, fenName, isSlidingPiece) {
         this.file = file;
         this.rank = rank;
-        this.isLight = isLight;
+        this.isWhite = isWhite;
         this.fenName = fenName;
         this.isSlidingPiece = isSlidingPiece;
 
         this.isMoving = false;
+        this.isFirstMove = true;
     }
 
     getMoves() {
@@ -28,7 +29,7 @@ export class Piece {
     }
 
     getAssetUrl() {
-        return 'assets/' + this.fenName + '_' + (this.isLight ? 'l' : 'd') + '.svg';
+        return 'assets/' + this.fenName + '_' + (this.isWhite ? 'l' : 'd') + '.svg';
     }
 
     loadAsset() {

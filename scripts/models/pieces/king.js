@@ -2,8 +2,8 @@ import { Piece } from './piece.js';
 import { MovesUtils } from '../../utils/movesUtils.js';
 
 export class King extends Piece {
-    constructor(file, rank, isLight) {
-        super(file, rank, isLight, 'k', true);
+    constructor(file, rank, isWhite) {
+        super(file, rank, isWhite, 'k', true);
     }
 
     getMoves() {
@@ -16,7 +16,7 @@ export class King extends Piece {
             horizontal: horizontalMoves,
             vertical: verticalMoves,
             diagonal: diagonalMoves,
-            special: null,
+            nonSlidingMoves: null,
         };
     }
 }
