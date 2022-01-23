@@ -1,6 +1,6 @@
 import { BoardUtils } from './boardUtils.js';
 
-function generateHorizontalMoves(currentFile, currentRank, limit) {
+function generateHorizontalMoves(currentFile, currentRank, limit, includeCurrentPlacement = false) {
     let horizontals = [];
     let count, rankOffset, rank, moves;
     for (let i = 0; i < 2; i++) {
@@ -12,7 +12,7 @@ function generateHorizontalMoves(currentFile, currentRank, limit) {
         rankOffset = i % 2 ? -1 : 1;
 
         // Generate moves until not on board anymore
-        count = 0;
+        count = includeCurrentPlacement ? -1 : 0;
         do {
             // Add previous placement to moves
             if (rank) {
@@ -32,7 +32,7 @@ function generateHorizontalMoves(currentFile, currentRank, limit) {
     return horizontals;
 }
 
-function generateVerticalMoves(currentFile, currentRank, limit) {
+function generateVerticalMoves(currentFile, currentRank, limit, includeCurrentPlacement = false) {
     let verticals = [];
     let count, fileOffset, file, moves;
     for (let i = 0; i < 2; i++) {
@@ -44,7 +44,7 @@ function generateVerticalMoves(currentFile, currentRank, limit) {
         fileOffset = i % 2 ? -1 : 1;
 
         // Generate moves until not on board anymore
-        count = 0;
+        count = includeCurrentPlacement ? -1 : 0;
         do {
             // Add previous placement to moves
             if (file) {
@@ -64,7 +64,7 @@ function generateVerticalMoves(currentFile, currentRank, limit) {
     return verticals;
 }
 
-function generateDiagonalMoves(currentFile, currentRank, limit) {
+function generateDiagonalMoves(currentFile, currentRank, limit, includeCurrentPlacement = false) {
     let diagonals = [];
     let count, fileOffset, rankOffset, file, rank, moves;
     for (let i = 0; i < 4; i++) {
@@ -78,7 +78,7 @@ function generateDiagonalMoves(currentFile, currentRank, limit) {
         rankOffset = i >= 2 ? -1 : 1;
 
         // Generate moves until not on board anymore
-        count = 0;
+        count = includeCurrentPlacement ? -1 : 0;
         do {
             // Add previous placement to moves
             if (file && rank) {
@@ -171,7 +171,7 @@ function filterEnemyPieceMoves(moves, pieces, movingPiece) {
     moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
 }
 
-function filterDuplicateMoves(moves) {
+function removeDuplicateMoves(moves) {
     const moveIndicesToRemove = [];
     moves.reduce((visitedMoves, move, index) => {
         if (visitedMoves.some((visitedMove) => visitedMove.file === move.file && visitedMove.rank === move.rank)) {
@@ -181,6 +181,23 @@ function filterDuplicateMoves(moves) {
         }
         return visitedMoves;
     }, []);
+
+    // Remove moves from back to front
+    moveIndicesToRemove.reverse();
+    moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
+}
+
+function filterMovesInCommon(moves, movesToCheck, keepMoves) {
+    const moveIndicesToRemove = [];
+    moves.forEach((move, index) => {
+        const containsDuplicate = movesToCheck.some((moveToCheck) => moveToCheck.file === move.file && moveToCheck.rank === move.rank);
+        // ^ is XOR, simplified: !keepMoves && containsDuplicate || keepMoves && !containsDuplicate
+        if (keepMoves ^ containsDuplicate) {
+            moveIndicesToRemove.push(index);
+        }
+    });
+
+    // Remove moves from back to front
     moveIndicesToRemove.reverse();
     moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
 }
@@ -193,5 +210,6 @@ export const MovesUtils = {
     removeMovesWithEnemies,
     filterSamePieceMoves,
     filterEnemyPieceMoves,
-    filterDuplicateMoves,
+    removeDuplicateMoves,
+    filterMovesInCommon,
 };

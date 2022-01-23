@@ -16,7 +16,7 @@ export class Board {
 
     moves;
 
-    enemyAttacks;
+    enemyAttacks = [];
 
     constructor() {
         this.pieces = [];
@@ -53,12 +53,12 @@ export class Board {
         // Add light pieces
         pieces.push(
             new Rook(1, 1, true),
-            new Knight(1, 2, true),
-            new Bishop(1, 3, true),
-            new Queen(1, 4, true),
+            // new Knight(1, 2, true),
+            // new Bishop(1, 3, true),
+            // new Queen(1, 4, true),
             new King(1, 5, true),
-            new Bishop(1, 6, true),
-            new Knight(1, 7, true),
+            // new Bishop(1, 6, true),
+            // new Knight(1, 7, true),
             new Rook(1, 8, true),
         );
         addPawns(2, true); // Light pawns
@@ -107,10 +107,17 @@ export class Board {
                 // Set piece placement
                 piece.setPlacement(move.file, move.rank);
 
+                /**
+                 * Check for multi-piece moves
+                 */
                 // Check if move had enPassant piece to capture
                 if (move.enPassant) {
                     const indexToRemove = this.pieces.indexOf(move.enPassant);
                     this.pieces.splice(indexToRemove, 1);
+                }
+                // Check if move is castling move
+                if (move.castling) {
+                    move.castling.piece.setPlacement(move.castling.file, move.castling.rank);
                 }
 
                 // TODO: Check if is pawn exchange for rook, knight, bishop or queen
@@ -144,13 +151,22 @@ export class Board {
         const enemyMoves = enemyPieces.map((piece) => this.getMoves(piece)).flat();
 
         // Remove duplicate moves
-        MovesUtils.filterDuplicateMoves(enemyMoves);
+        MovesUtils.removeDuplicateMoves(enemyMoves);
 
         // Return moves
         return enemyMoves;
     }
 
     getMoves(movingPiece) {
+        if (!(movingPiece instanceof King)) {
+            // Check if king is targeted
+            const king = this.pieces.find((piece) => piece.isWhite === movingPiece.isWhite && piece instanceof King);
+            if (this.pieceIsTargeted(king)) {
+                // TODO: Return any moves that block the king from being targeted
+                return [];
+            }
+        }
+
         // Get possible moves
         const moves = movingPiece.getMoves();
 
@@ -173,7 +189,7 @@ export class Board {
         }
 
         // Join all moves and return
-        const joinedMoved = [
+        const joinedMoves = [
             ...horizontalMoves.flat(),
             ...verticalMoves.flat(),
             ...diagonalMoves.flat(),
@@ -182,16 +198,22 @@ export class Board {
         ];
 
         // Remove duplicates
-        MovesUtils.filterDuplicateMoves(joinedMoved);
+        MovesUtils.removeDuplicateMoves(joinedMoves);
 
         // Check if is king
         if (movingPiece instanceof King) {
-            // TODO: Remove moves where enemy can attack (this.enemyAttacks)
-            // TODO: Check if move is occupied by enemy attack for king
+            // Remove moves where enemy can attack
+            MovesUtils.filterMovesInCommon(joinedMoves, this.enemyAttacks, false);
         }
 
         // Return moves
-        return joinedMoved;
+        return joinedMoves;
+    }
+
+    pieceIsTargeted(piece) {
+        const piecePlacements = [piece];
+        MovesUtils.filterMovesInCommon(piecePlacements, this.enemyAttacks, true);
+        return piecePlacements.length > 0;
     }
 
     getMultiPieceMoves(movingPiece) {
@@ -233,21 +255,45 @@ export class Board {
 
         // Generate castling moves
         if (movingPiece instanceof King && movingPiece.isFirstMove) {
-            const rooks = this.pieces.filter(
-                (piece) => piece.isFirstMove && piece.isWhite === movingPiece.isWhite && piece instanceof Rook,
-            );
-            let moves = rooks.map((rook) => {
-                let offset = rook.rank < movingPiece.rank ? -1 : 1;
-                return { file: movingPiece.file, rank: movingPiece.rank + 2 * offset, castle: rook };
+            // Get rooks that haven't moved yet
+            let rooks = this.pieces.filter((piece) => piece.isFirstMove && piece.isWhite === movingPiece.isWhite && piece instanceof Rook);
+
+            rooks = rooks.filter((rook) => {
+                // Calculate mininum and maximum rank of king and rook
+                const minRank = rook.rank > movingPiece.rank ? movingPiece.rank : rook.rank;
+                const maxRank = rook.rank < movingPiece.rank ? movingPiece.rank : rook.rank;
+
+                // Keep rooks that have no other pieces between it and king
+                const hasPiecesBetween = this.pieces.some(
+                    (piece) => piece.file === rook.file && piece.rank > minRank && piece.rank < maxRank,
+                );
+                if (hasPiecesBetween) {
+                    return false;
+                }
+
+                // Keep rooks that have aren't under attack and have no attacked spaces between rook and king
+                const limit = maxRank - minRank;
+                const horizontalDirections = MovesUtils.generateHorizontalMoves(rook.file, rook.rank, limit, true);
+                const horizontalSpaces = horizontalDirections.find((directionSpaces) =>
+                    // Find direction that points to king
+                    directionSpaces.some((space) => space.file === movingPiece.file && space.rank === movingPiece.rank),
+                );
+                horizontalSpaces.pop(); // Remove king placement
+                MovesUtils.filterMovesInCommon(horizontalSpaces, this.enemyAttacks, true);
+                return horizontalSpaces.length === 0;
             });
 
-            // TODO: Check if there are any pieces between rook and king
+            // Generate castling moves for remaining rooks
+            let castleMoves = rooks.map((rook) => {
+                let offset = rook.rank < movingPiece.rank ? -1 : 1;
+                return {
+                    file: movingPiece.file,
+                    rank: movingPiece.rank + 2 * offset,
+                    castling: { file: rook.file, rank: movingPiece.rank + 1 * offset, piece: rook },
+                };
+            });
 
-            // TODO: Get enemy moves
-            //  Check if any enemy move.file === king.file && move.rank between or equal to king.rank and rook.rank
-            console.log(rooks);
-            // TODO: Castling (max 2 squares away for queen side)
-            // console.log('generate castle move');
+            multiPieceMoves.push(...castleMoves);
         }
 
         // Return multi-piece moves

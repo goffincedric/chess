@@ -143,3 +143,17 @@ window.setup = setup;
 window.draw = draw;
 window.mouseReleased = mouseReleased;
 window.mousePressed = mousePressed;
+
+
+/**
+ * Todo:
+ *  * Allow moves that block check
+ *  * Pick Rook/Knight/Bishop/Queen when pawn reaches other side
+ *  * Look for checkmate (no moves to play)
+ *  * Reset game
+ *  * Pick starting color
+ *  * Chessboard markings (files, ranks)
+ *  * Show captured pieces
+ *  * Integrate in discord bot
+ *  * Add AI
+ */
