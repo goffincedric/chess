@@ -15,18 +15,14 @@ function generateHorizontalMoves(currentFile, currentRank, limit, includeCurrent
         count = includeCurrentPlacement ? -1 : 0;
         do {
             // Add previous placement to moves
-            if (rank) {
-                moves.push({ file: currentFile, rank });
-            }
+            if (rank) moves.push({ file: currentFile, rank });
 
             // Calculate new placement
             count++;
             rank = currentRank + count * rankOffset;
         } while (BoardUtils.isOnBoard(currentFile, rank) && (!limit || count <= limit));
         // Check for moves to add
-        if (moves.length) {
-            horizontals.push(moves);
-        }
+        if (moves.length) horizontals.push(moves);
     }
 
     return horizontals;
@@ -47,18 +43,14 @@ function generateVerticalMoves(currentFile, currentRank, limit, includeCurrentPl
         count = includeCurrentPlacement ? -1 : 0;
         do {
             // Add previous placement to moves
-            if (file) {
-                moves.push({ file, rank: currentRank });
-            }
+            if (file) moves.push({ file, rank: currentRank });
 
             // Calculate new placement
             count++;
             file = currentFile + count * fileOffset;
         } while (BoardUtils.isOnBoard(file, currentRank) && (!limit || count <= limit));
         // Check for moves to add
-        if (moves.length) {
-            verticals.push(moves);
-        }
+        if (moves.length) verticals.push(moves);
     }
 
     return verticals;
@@ -81,9 +73,7 @@ function generateDiagonalMoves(currentFile, currentRank, limit, includeCurrentPl
         count = includeCurrentPlacement ? -1 : 0;
         do {
             // Add previous placement to moves
-            if (file && rank) {
-                moves.push({ file, rank });
-            }
+            if (file && rank) moves.push({ file, rank });
 
             // Calculate new placement
             count++;
@@ -91,15 +81,107 @@ function generateDiagonalMoves(currentFile, currentRank, limit, includeCurrentPl
             rank = currentRank + count * rankOffset;
         } while (BoardUtils.isOnBoard(file, rank) && (!limit || count <= limit));
         // Check for moves to add
-        if (moves.length) {
-            diagonals.push(moves);
-        }
+        if (moves.length) diagonals.push(moves);
     }
 
     return diagonals;
 }
 
-function truncateMoveDirections(moveDirections, pieces, movingPiece) {
+function generateHorizontalMovesBetween(currentFile, rank1, rank2, includePlacement1, includePlacement2) {
+    // Calculate smallest rank, largest rank and limit
+    const minRank = Math.min(rank1, rank2);
+    const maxRank = Math.max(rank1, rank2);
+    const limit = maxRank - minRank;
+
+    // Check if placements are the same and at least 1 placement is included
+    if (limit === 0 && (includePlacement1 || includePlacement2)) return [{ file: currentFile, rank: rank1 }];
+
+    // Generate spaces for each horizontal direction, starting from rank1
+    const horizontalDirections = generateHorizontalMoves(currentFile, rank1, limit, includePlacement1);
+
+    // Get direction pointing to rank2
+    const horizontalSpaces = horizontalDirections.find((directionSpaces) => directionSpaces.some((space) => space.rank === rank2));
+
+    // Check if placement with rank2 needs to be included
+    if (!includePlacement2) horizontalSpaces.pop();
+
+    // Return generates spaces
+    return horizontalSpaces ?? [];
+}
+
+function generateVerticalMovesBetween(currentRank, file1, file2, includePlacement1, includePlacement2) {
+    // Calculate smallest file, largest file and limit
+    const minFile = Math.min(file1, file2);
+    const maxFile = Math.max(file1, file2);
+    const limit = maxFile - minFile;
+
+    // Check if placements are the same and at least 1 placement is included
+    if (limit === 0 && (includePlacement1 || includePlacement2)) return [{ file: file1, rank: currentRank }];
+
+    // Generate spaces for each vertical direction, starting from file1
+    const verticalDirections = generateVerticalMoves(file1, currentRank, limit, includePlacement1);
+
+    // Get direction pointing to file2
+    const verticalSpaces = verticalDirections.find((directionSpaces) => directionSpaces.some((space) => space.file === file2));
+
+    // Check if placement with file2 needs to be included
+    if (!includePlacement2) verticalSpaces?.pop();
+
+    // Return generates spaces
+    return verticalSpaces ?? [];
+}
+
+function generateDiagonalMovesBetween(file1, rank1, file2, rank2, includePlacement1, includePlacement2) {
+    // Calculate smallest file and rank, largest file and rank and difference between ranks and files
+    const minFile = Math.min(file1, file2);
+    const maxFile = Math.max(file1, file2);
+    const minRank = Math.min(rank1, rank2);
+    const maxRank = Math.max(rank1, rank2);
+    const dFile = maxFile - minFile;
+    const dRank = maxRank - minRank;
+
+    // Check if difference between ranks and files is not the same (rectangle, therefore not a straight diagonal)
+    if (dFile !== dRank) return [];
+
+    // Check if placements are the same and at least 1 placement is included
+    if (dFile === 0 && (includePlacement1 || includePlacement2)) return [{ file: file1, rank: rank1 }];
+
+    // Generate spaces for each diagonal direction, starting from file1 and rank1
+    const diagonalDirections = generateDiagonalMoves(file1, rank1, dFile, includePlacement1);
+
+    // Get direction pointing to file2 and rank 2
+    const diagonalSpaces = diagonalDirections.find((directionSpaces) =>
+        directionSpaces.some((space) => space.file === file2 && space.rank === rank2),
+    );
+
+    // Check if placement with file2 and rank2 needs to be included
+    if (!includePlacement2) diagonalSpaces?.pop();
+
+    // Return generates spaces
+    return diagonalSpaces ?? [];
+}
+
+function generateMovesBetweenPlacements(file1, rank1, file2, rank2, includePlacement1, includePlacement2) {
+    // Calculate smallest file and rank, largest file and rank and difference between ranks and files
+    const minFile = Math.min(file1, file2);
+    const maxFile = Math.max(file1, file2);
+    const minRank = Math.min(rank1, rank2);
+    const maxRank = Math.max(rank1, rank2);
+    const dFile = maxFile - minFile;
+    const dRank = maxRank - minRank;
+
+    // Check if is horizontal move
+    if (dFile === 0 && dRank > 0) {
+        return generateHorizontalMovesBetween(file1, rank1, rank2, includePlacement1, includePlacement2);
+    } else if (dFile > 0 && dRank === 0) {
+        // Check if is vertical move
+        return generateVerticalMovesBetween(rank1, file1, file2, includePlacement1, includePlacement2);
+    } else {
+        return generateDiagonalMovesBetween(file1, rank1, file2, rank2, includePlacement1, includePlacement2);
+    }
+}
+
+function truncateMoveDirections(moveDirections, pieces, movingPiece, keepSamePieceMoves = false) {
     // Loop over directions
     let foundPiece, count;
     moveDirections.forEach((moves) => {
@@ -118,7 +200,7 @@ function truncateMoveDirections(moveDirections, pieces, movingPiece) {
 
         // Check if piece was found
         if (foundPiece) {
-            if (foundPiece.isWhite === movingPiece.isWhite) {
+            if (!keepSamePieceMoves && foundPiece.isWhite === movingPiece.isWhite) {
                 count--;
             }
             moves.splice(count);
@@ -171,6 +253,7 @@ function filterEnemyPieceMoves(moves, pieces, movingPiece) {
     moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
 }
 
+// Remove moves that have duplicate placements
 function removeDuplicateMoves(moves) {
     const moveIndicesToRemove = [];
     moves.reduce((visitedMoves, move, index) => {
@@ -187,6 +270,7 @@ function removeDuplicateMoves(moves) {
     moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
 }
 
+// Filter moves that attack pieces of the same color
 function filterMovesInCommon(moves, movesToCheck, keepMoves) {
     const moveIndicesToRemove = [];
     moves.forEach((move, index) => {
@@ -206,6 +290,10 @@ export const MovesUtils = {
     generateHorizontalMoves,
     generateVerticalMoves,
     generateDiagonalMoves,
+    generateHorizontalMovesBetween,
+    generateVerticalMovesBetween,
+    generateDiagonalMovesBetween,
+    generateMovesBetweenPlacements,
     truncateMoveDirections,
     removeMovesWithEnemies,
     filterSamePieceMoves,

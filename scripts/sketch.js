@@ -36,7 +36,7 @@ function draw() {
     drawBoard();
 
     // Draw enemy moves
-    // drawEnemyMoves();
+    drawEnemyMoves();
 
     // Draw possible moves
     drawMoves();
@@ -50,10 +50,10 @@ function drawBoard() {
     noStroke();
     for (let file = 1; file <= FILES; file++) {
         for (let rank = 1; rank <= RANKS; rank++) {
-            let rectColor = color((file + rank) % 2 !== 0 ? COLORS.LIGHT : COLORS.DARK);
-            fill(rectColor);
-            const position = BoardUtils.placementToPosition(file, rank);
-            rect(position.x, position.y, RANK_SIZE, FILE_SIZE);
+            // Decide if is light or dark square
+            let rectColor = (file + rank) % 2 !== 0 ? COLORS.LIGHT : COLORS.DARK;
+            // Draw square
+            drawSquare(file, rank, rectColor);
         }
     }
 }
@@ -61,11 +61,16 @@ function drawBoard() {
 function drawEnemyMoves() {
     if (chessBoard.enemyAttacks?.length) {
         // Color possible moves
-        chessBoard.enemyAttacks.forEach((move) => {
-            fill(color(COLORS.MOVES.ENEMY));
-            const position = BoardUtils.placementToPosition(move.file, move.rank);
-            rect(position.x, position.y, RANK_SIZE, FILE_SIZE);
-        });
+        chessBoard.enemyAttacks.reduce((drawnMoves, move) => {
+            // Check if move has not been drawn on board yet
+            if (!drawnMoves.some((drawnMove) => drawnMove.file === move.file && drawnMove.rank === move.rank)) {
+                // Draw square for move
+                drawSquare(move.file, move.rank, COLORS.MOVES.ENEMY);
+                // Add move to drawn moves
+                drawnMoves.push(move);
+            }
+            return drawnMoves;
+        }, []);
     }
 }
 
@@ -87,20 +92,22 @@ function drawMoves() {
 
                 // If color was set, set square to that color
                 if (rectColor) {
-                    fill(rectColor);
-                    const position = BoardUtils.placementToPosition(move.file, move.rank);
-                    rect(position.x, position.y, RANK_SIZE, FILE_SIZE);
+                    drawSquare(move.file, move.rank, rectColor);
                 }
             });
 
             // Color current square
-            fill(color(COLORS.MOVES.CURRENT));
-            const currenPosition = BoardUtils.placementToPosition(chessBoard.movingPiece.file, chessBoard.movingPiece.rank);
-            rect(currenPosition.x, currenPosition.y, RANK_SIZE, FILE_SIZE);
+            drawSquare(chessBoard.movingPiece.file, chessBoard.movingPiece.rank, COLORS.MOVES.CURRENT);
         } catch (e) {
             console.warn(`Couldn't generate possible moves for piece ${chessBoard.movingPiece.constructor.name}`, e);
         }
     }
+}
+
+function drawSquare(file, rank, moveColor) {
+    fill(color(moveColor));
+    const position = BoardUtils.placementToPosition(file, rank);
+    rect(position.x, position.y, RANK_SIZE, FILE_SIZE);
 }
 
 // Draw pieces on board
@@ -144,16 +151,14 @@ window.draw = draw;
 window.mouseReleased = mouseReleased;
 window.mousePressed = mousePressed;
 
-
 /**
- * Todo:
- *  * Allow moves that block check
+ * TODO:
  *  * Pick Rook/Knight/Bishop/Queen when pawn reaches other side
- *  * Look for checkmate (no moves to play)
- *  * Reset game
+ *  * Reset game on win/loss
  *  * Pick starting color
  *  * Chessboard markings (files, ranks)
  *  * Show captured pieces
+ *  * Add FEN notation support (board initialization & moves)
  *  * Integrate in discord bot
  *  * Add AI
  */

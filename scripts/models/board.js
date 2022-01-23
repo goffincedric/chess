@@ -53,12 +53,12 @@ export class Board {
         // Add light pieces
         pieces.push(
             new Rook(1, 1, true),
-            // new Knight(1, 2, true),
-            // new Bishop(1, 3, true),
-            // new Queen(1, 4, true),
+            new Knight(1, 2, true),
+            new Bishop(1, 3, true),
+            new Queen(1, 4, true),
             new King(1, 5, true),
-            // new Bishop(1, 6, true),
-            // new Knight(1, 7, true),
+            new Bishop(1, 6, true),
+            new Knight(1, 7, true),
             new Rook(1, 8, true),
         );
         addPawns(2, true); // Light pawns
@@ -141,6 +141,12 @@ export class Board {
         this.isWhiteTurn = !this.isWhiteTurn;
 
         this.enemyAttacks = this.getEnemyAttacks();
+
+        // Look for checkmate (no moves to play)
+        if (this.isCheckMate()) {
+            // TODO: Show message and reset board?
+            console.log(`Checkmate, ${this.isWhiteTurn ? 'white' : 'black'}wins`);
+        }
     }
 
     getEnemyAttacks() {
@@ -148,25 +154,21 @@ export class Board {
         const enemyPieces = this.pieces.filter((piece) => piece.isWhite !== this.isWhiteTurn);
 
         // Calculate moves for each piece and return
-        const enemyMoves = enemyPieces.map((piece) => this.getMoves(piece)).flat();
-
-        // Remove duplicate moves
-        MovesUtils.removeDuplicateMoves(enemyMoves);
-
-        // Return moves
-        return enemyMoves;
+        return enemyPieces.map((piece) => this.getMoves(piece, true)).flat();
     }
 
-    getMoves(movingPiece) {
-        if (!(movingPiece instanceof King)) {
-            // Check if king is targeted
-            const king = this.pieces.find((piece) => piece.isWhite === movingPiece.isWhite && piece instanceof King);
-            if (this.pieceIsTargeted(king)) {
-                // TODO: Return any moves that block the king from being targeted
-                return [];
-            }
-        }
+    isCheckMate() {
+        // Get all pieces for current turn
+        const pieces = this.pieces.filter((piece) => piece.isWhite === this.isWhiteTurn);
 
+        // Get all moves for all pieces
+        const moves = pieces.map((piece) => this.getMoves(piece)).flat();
+
+        // Check if no moves can be made and return
+        return moves.length === 0;
+    }
+
+    getMoves(movingPiece, isEnemyMoves = false) {
         // Get possible moves
         const moves = movingPiece.getMoves();
 
@@ -178,14 +180,23 @@ export class Board {
         const multiPieceMoves = this.getMultiPieceMoves(movingPiece);
 
         // Filter out illegal moves
-        MovesUtils.truncateMoveDirections(horizontalMoves, this.pieces, movingPiece);
-        MovesUtils.truncateMoveDirections(verticalMoves, this.pieces, movingPiece);
-        MovesUtils.truncateMoveDirections(diagonalMoves, this.pieces, movingPiece);
-        MovesUtils.filterSamePieceMoves(nonSlidingMoves, this.pieces, movingPiece);
+        MovesUtils.truncateMoveDirections(horizontalMoves, this.pieces, movingPiece, isEnemyMoves);
+        MovesUtils.truncateMoveDirections(verticalMoves, this.pieces, movingPiece, isEnemyMoves);
+        MovesUtils.truncateMoveDirections(diagonalMoves, this.pieces, movingPiece, isEnemyMoves);
+        if (!isEnemyMoves) {
+            MovesUtils.filterSamePieceMoves(nonSlidingMoves, this.pieces, movingPiece);
+        }
 
-        // Prevent pawn from taking enemy piece straight ahead
+        // Check if is pawn
         if (movingPiece instanceof Pawn) {
+            // Prevent pawn from taking enemy piece straight ahead
             verticalMoves.forEach((moves) => MovesUtils.removeMovesWithEnemies(moves, this.pieces, movingPiece));
+
+            // Check if is enemy moves generation
+            if (!isEnemyMoves) {
+                // Remove pawn capture moves that are not attacking enemies
+                diagonalMoves.forEach((moves) => MovesUtils.filterEnemyPieceMoves(moves, this.pieces, movingPiece));
+            }
         }
 
         // Join all moves and return
@@ -197,23 +208,84 @@ export class Board {
             ...multiPieceMoves,
         ];
 
-        // Remove duplicates
-        MovesUtils.removeDuplicateMoves(joinedMoves);
-
         // Check if is king
         if (movingPiece instanceof King) {
             // Remove moves where enemy can attack
             MovesUtils.filterMovesInCommon(joinedMoves, this.enemyAttacks, false);
+        } else if (!isEnemyMoves) {
+            // Get king
+            const king = this.pieces.find((piece) => piece.isWhite === movingPiece.isWhite && piece instanceof King);
+            // Get moves of pieces targeting king
+            const pieceMovesTargetingKing = this.pieceIsTargetedBy(king);
+            // Check if any moves are present
+            if (pieceMovesTargetingKing.length > 0) {
+                MovesUtils.filterMovesInCommon(joinedMoves, pieceMovesTargetingKing, true);
+            }
+        }
+
+        // Add piece to moves is enemy moves & add piece placement
+        if (isEnemyMoves) {
+            joinedMoves.map((move) => (move.enemyPiece = movingPiece));
         }
 
         // Return moves
         return joinedMoves;
     }
 
-    pieceIsTargeted(piece) {
-        const piecePlacements = [piece];
-        MovesUtils.filterMovesInCommon(piecePlacements, this.enemyAttacks, true);
-        return piecePlacements.length > 0;
+    pieceIsTargetedBy(attackedPiece) {
+        // Get all enemy moves
+        let enemyAttacks = [...this.enemyAttacks];
+
+        // Map each move to the corresponding enemy
+        const attacksPerEnemy = new Map();
+        const enemies = [];
+        enemyAttacks.forEach((move) => {
+            if (attacksPerEnemy.has(move.enemyPiece)) {
+                attacksPerEnemy.get(move.enemyPiece).push(move);
+            } else {
+                enemies.push(move.enemyPiece);
+                // Add move + enemyPiece placement itself to map
+                attacksPerEnemy.set(move.enemyPiece, [
+                    move,
+                    { file: move.enemyPiece.file, rank: move.enemyPiece.rank, enemyPiece: move.enemyPiece },
+                ]);
+            }
+        });
+
+        // Remove enemies not attacking attackedPiece from map
+        enemies.forEach((enemy) => {
+            // Get moves of enemy
+            const moves = attacksPerEnemy.get(enemy);
+            // Check if enemy is attacking piece
+            if (!moves.some((move) => move.file === attackedPiece.file && move.rank === attackedPiece.rank)) {
+                attacksPerEnemy.delete(enemy);
+            } else {
+                // Check if is not pawn or knight
+                if (!(enemy instanceof Pawn || enemy instanceof Knight)) {
+                    // Generate moves between enemy and attackedPiece
+                    const movesBetween = MovesUtils.generateMovesBetweenPlacements(
+                        enemy.file,
+                        enemy.rank,
+                        attackedPiece.file,
+                        attackedPiece.rank,
+                        true,
+                        false,
+                    );
+                    // Remove moves that are not moves between enemy and attackedPiece or on attackedPie
+                    MovesUtils.filterMovesInCommon(moves, movesBetween, true);
+                } else {
+                    // TODO: !!!! START HERE !!!! Check if pawn check block and knight check block work correctly
+                    // TODO: Handle knight and ??pawn?? differently?
+                }
+            }
+        });
+
+        // Join moves of all attacking pieces and remove duplicate placements
+        enemyAttacks = Array.from(attacksPerEnemy.values()).flat();
+        MovesUtils.removeDuplicateMoves(enemyAttacks);
+
+        // Return attacking moves
+        return enemyAttacks;
     }
 
     getMultiPieceMoves(movingPiece) {
@@ -221,13 +293,8 @@ export class Board {
 
         // Generate multi-piece pawn moves
         if (movingPiece instanceof Pawn) {
-            // Pawn capture
-            let attackingSpaces = movingPiece.getAttackingSpaces();
-            MovesUtils.filterEnemyPieceMoves(attackingSpaces, this.pieces, movingPiece);
-            multiPieceMoves.push(...attackingSpaces);
-
             // En passant
-            attackingSpaces = movingPiece.getAttackingSpaces();
+            const attackingSpaces = movingPiece.getAttackingSpaces();
             const enPassantSpaces = movingPiece
                 .getEnPassantSpaces()
                 .map((move) =>
@@ -259,9 +326,14 @@ export class Board {
             let rooks = this.pieces.filter((piece) => piece.isFirstMove && piece.isWhite === movingPiece.isWhite && piece instanceof Rook);
 
             rooks = rooks.filter((rook) => {
-                // Calculate mininum and maximum rank of king and rook
-                const minRank = rook.rank > movingPiece.rank ? movingPiece.rank : rook.rank;
-                const maxRank = rook.rank < movingPiece.rank ? movingPiece.rank : rook.rank;
+                // Check if rook is on same file as king
+                if (rook.file !== movingPiece.file) {
+                    return false;
+                }
+
+                // Calculate minimum and maximum rank of king and rook
+                const minRank = Math.min(rook.rank, movingPiece.rank);
+                const maxRank = Math.max(rook.rank, movingPiece.rank);
 
                 // Keep rooks that have no other pieces between it and king
                 const hasPiecesBetween = this.pieces.some(
@@ -272,13 +344,9 @@ export class Board {
                 }
 
                 // Keep rooks that have aren't under attack and have no attacked spaces between rook and king
-                const limit = maxRank - minRank;
-                const horizontalDirections = MovesUtils.generateHorizontalMoves(rook.file, rook.rank, limit, true);
-                const horizontalSpaces = horizontalDirections.find((directionSpaces) =>
-                    // Find direction that points to king
-                    directionSpaces.some((space) => space.file === movingPiece.file && space.rank === movingPiece.rank),
-                );
-                horizontalSpaces.pop(); // Remove king placement
+                // Generate spaces between rook and king, including rook and king placements
+                const horizontalSpaces = MovesUtils.generateHorizontalMovesBetween(rook.file, rook.rank, movingPiece.rank, true, true);
+                // Check if any spaces are under attack
                 MovesUtils.filterMovesInCommon(horizontalSpaces, this.enemyAttacks, true);
                 return horizontalSpaces.length === 0;
             });
