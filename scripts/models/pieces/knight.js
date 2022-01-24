@@ -2,8 +2,8 @@ import { Piece } from './piece.js';
 import { BoardUtils } from '../../utils/boardUtils.js';
 
 export class Knight extends Piece {
-    constructor(file, rank, isWhite) {
-        super(file, rank, isWhite, 'n', false);
+    constructor(file, rank, isWhite, isFirstMove = true) {
+        super(file, rank, isWhite, 'n', false, isFirstMove);
     }
 
     getMoves() {

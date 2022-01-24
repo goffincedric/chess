@@ -1,9 +1,8 @@
 import { Piece } from './piece.js';
-import { MovesUtils } from '../../utils/movesUtils.js';
 
 export class Pawn extends Piece {
-    constructor(file, rank, isWhite) {
-        super(file, rank, isWhite, 'p', true);
+    constructor(file, rank, isWhite, isFirstMove = true) {
+        super(file, rank, isWhite, 'p', true, isFirstMove);
     }
 
     getMoves() {
@@ -18,7 +17,7 @@ export class Pawn extends Piece {
         }
 
         // Pawn capture
-        const diagonalMoves = this.getAttackingSpaces().map(move => [move]);
+        const diagonalMoves = this.getAttackingSpaces().map((move) => [move]);
 
         // Return categorised moves
         return {

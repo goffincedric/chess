@@ -36,32 +36,62 @@ export class Board {
             }
         }
 
-        // Generate pieces
+        // // Generate pieces
         const pieces = [];
-        // Add dark pieces
+        // // Add dark pieces
+        // pieces.push(
+        //     new Rook(8, 1, false),
+        //     new Knight(8, 2, false),
+        //     new Bishop(8, 3, false),
+        //     new Queen(8, 4, false),
+        //     new King(8, 5, false),
+        //     new Bishop(8, 6, false),
+        //     new Knight(8, 7, false),
+        //     new Rook(8, 8, false),
+        // );
+        // addPawns(7, false); // Dark pawns
+        // // Add light pieces
+        // pieces.push(
+        //     new Rook(1, 1, true),
+        //     new Knight(1, 2, true),
+        //     new Bishop(1, 3, true),
+        //     new Queen(1, 4, true),
+        //     new King(1, 5, true),
+        //     new Bishop(1, 6, true),
+        //     new Knight(1, 7, true),
+        //     new Rook(1, 8, true),
+        // );
+        // addPawns(2, true); // Light pawns
+
+        // pieces.push(new Queen(4, 8, false));
+        // // pieces.push(new Pawn(3, 7, true));
+        // pieces.push(new Pawn(2, 6, true));
+        // pieces.push(new Rook(4, 5, false));
+        // pieces.push(new Pawn(3, 5, true));
+
         pieces.push(
             new Rook(8, 1, false),
-            new Knight(8, 2, false),
-            new Bishop(8, 3, false),
-            new Queen(8, 4, false),
-            new King(8, 5, false),
-            new Bishop(8, 6, false),
-            new Knight(8, 7, false),
-            new Rook(8, 8, false),
-        );
-        addPawns(7, false); // Dark pawns
-        // Add light pieces
-        pieces.push(
+            new Pawn(7, 2, false),
+            new King(7, 6, false, false),
+            new Pawn(7, 7, false),
+            new Knight(6, 1, false),
+            new Knight(6, 3, false),
+            new Bishop(6, 5, false),
+            new Pawn(5, 1, false, false),
+            new Queen(5, 4, true),
+            new Bishop(4, 6, true),
+            new Pawn(4, 8, true, false),
+            new Pawn(3, 1, true, false),
+            new Pawn(2, 2, true),
+            new Queen(2, 3, false),
+            new Bishop(2, 5, true),
+            new Pawn(2, 6, true),
+            new Pawn(2, 7, true),
             new Rook(1, 1, true),
             new Knight(1, 2, true),
-            new Bishop(1, 3, true),
-            new Queen(1, 4, true),
             new King(1, 5, true),
-            new Bishop(1, 6, true),
-            new Knight(1, 7, true),
             new Rook(1, 8, true),
         );
-        addPawns(2, true); // Light pawns
 
         // Set pieces
         this.pieces = pieces;
@@ -151,7 +181,7 @@ export class Board {
 
     getEnemyAttacks() {
         // Get enemy pieces
-        const enemyPieces = this.pieces.filter((piece) => piece.isWhite !== this.isWhiteTurn);
+        const enemyPieces = this.getEnemyPieces();
 
         // Calculate moves for each piece and return
         return enemyPieces.map((piece) => this.getMoves(piece, true)).flat();
@@ -211,15 +241,54 @@ export class Board {
         // Check if is king
         if (movingPiece instanceof King) {
             // Remove moves where enemy can attack
+            // TODO: Remove moves on entire file/rank/diagonal where enemy can attack, not only moves up until the king itself
             MovesUtils.filterMovesInCommon(joinedMoves, this.enemyAttacks, false);
         } else if (!isEnemyMoves) {
+            /**
+             * Block check
+             */
             // Get king
             const king = this.pieces.find((piece) => piece.isWhite === movingPiece.isWhite && piece instanceof King);
             // Get moves of pieces targeting king
-            const pieceMovesTargetingKing = this.pieceIsTargetedBy(king);
+            const pieceMovesTargetingKing = this.pieceIsTargetedByMoves(king);
             // Check if any moves are present
             if (pieceMovesTargetingKing.length > 0) {
                 MovesUtils.filterMovesInCommon(joinedMoves, pieceMovesTargetingKing, true);
+            }
+
+            /**
+             * Don't break blocked check
+             */
+            if (joinedMoves.length > 0) {
+                const slidingPieces = this.getEnemyPieces().filter(
+                    (piece) => piece.isSlidingPiece && !(piece instanceof Pawn || piece instanceof King),
+                );
+                slidingPieces.forEach((slidingEnemyPiece) => {
+                    // Get moves between piece and king
+                    const movesBetween = MovesUtils.generateMovesBetweenPlacements(
+                        king.file,
+                        king.rank,
+                        slidingEnemyPiece.file,
+                        slidingEnemyPiece.rank,
+                        false,
+                        false,
+                    );
+                    if (movesBetween.length > 0) {
+                        // Check if enemy can make moves towards king
+                        const movesAvailable = this.getMoves(slidingEnemyPiece, true);
+                        if (MovesUtils.hasMovesInCommon(movesBetween, movesAvailable)) {
+                            // Get piece on each move placement and filter out empty placements
+                            const piecesOnMoves = movesBetween
+                                .map((move) => this.getPieceOnPlacement(move.file, move.rank))
+                                .filter((piece) => !!piece);
+                            // Check if movingPiece is the only piece between enemy
+                            if (piecesOnMoves.length === 1 && piecesOnMoves.includes(movingPiece)) {
+                                // Keep only moves targeting enemy piece
+                                MovesUtils.filterMovesInCommon(joinedMoves, [slidingEnemyPiece], true);
+                            }
+                        }
+                    }
+                });
             }
         }
 
@@ -232,7 +301,7 @@ export class Board {
         return joinedMoves;
     }
 
-    pieceIsTargetedBy(attackedPiece) {
+    pieceIsTargetedByMoves(attackedPiece) {
         // Get all enemy moves
         let enemyAttacks = [...this.enemyAttacks];
 
@@ -256,14 +325,15 @@ export class Board {
         enemies.forEach((enemy) => {
             // Get moves of enemy
             const moves = attacksPerEnemy.get(enemy);
-            // Check if enemy is attacking piece
+            // Check if enemy is not attacking piece
             if (!moves.some((move) => move.file === attackedPiece.file && move.rank === attackedPiece.rank)) {
                 attacksPerEnemy.delete(enemy);
             } else {
-                // Check if is not pawn or knight
-                if (!(enemy instanceof Pawn || enemy instanceof Knight)) {
+                // Check if is sliding piece (anything but the knight)
+                let movesToBlock;
+                if (enemy.isSlidingPiece) {
                     // Generate moves between enemy and attackedPiece
-                    const movesBetween = MovesUtils.generateMovesBetweenPlacements(
+                    movesToBlock = MovesUtils.generateMovesBetweenPlacements(
                         enemy.file,
                         enemy.rank,
                         attackedPiece.file,
@@ -271,12 +341,13 @@ export class Board {
                         true,
                         false,
                     );
-                    // Remove moves that are not moves between enemy and attackedPiece or on attackedPie
-                    MovesUtils.filterMovesInCommon(moves, movesBetween, true);
                 } else {
-                    // TODO: !!!! START HERE !!!! Check if pawn check block and knight check block work correctly
-                    // TODO: Handle knight and ??pawn?? differently?
+                    // Add piece's current position to movesToBlock. Since the piece doesn't slide,
+                    // you can only block by taking the enemy piece
+                    movesToBlock = [{ file: enemy.file, rank: enemy.rank }];
                 }
+                // Remove moves that are not moves between enemy and attackedPiece or on attackedPie
+                MovesUtils.filterMovesInCommon(moves, movesToBlock, true);
             }
         });
 
@@ -366,5 +437,13 @@ export class Board {
 
         // Return multi-piece moves
         return multiPieceMoves;
+    }
+
+    getPieceOnPlacement(file, rank) {
+        return this.pieces.find((piece) => piece.file === file && piece.rank === rank);
+    }
+
+    getEnemyPieces() {
+        return this.pieces.filter((piece) => piece.isWhite !== this.isWhiteTurn);
     }
 }

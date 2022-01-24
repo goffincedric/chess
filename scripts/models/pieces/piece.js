@@ -13,15 +13,15 @@ export class Piece {
     isMoving;
     isFirstMove;
 
-    constructor(file, rank, isWhite, fenName, isSlidingPiece) {
+    constructor(file, rank, isWhite, fenName, isSlidingPiece, isFirstMove = true) {
         this.file = file;
         this.rank = rank;
         this.isWhite = isWhite;
         this.fenName = fenName;
         this.isSlidingPiece = isSlidingPiece;
 
+        this.isFirstMove = isFirstMove;
         this.isMoving = false;
-        this.isFirstMove = true;
     }
 
     getMoves() {

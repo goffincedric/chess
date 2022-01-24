@@ -286,6 +286,10 @@ function filterMovesInCommon(moves, movesToCheck, keepMoves) {
     moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
 }
 
+function hasMovesInCommon(moves, movesToCheck) {
+    return moves.some(move => movesToCheck.some(moveToCheck => moveToCheck.file === move.file && moveToCheck.rank === move.rank));
+}
+
 export const MovesUtils = {
     generateHorizontalMoves,
     generateVerticalMoves,
@@ -300,4 +304,5 @@ export const MovesUtils = {
     filterEnemyPieceMoves,
     removeDuplicateMoves,
     filterMovesInCommon,
+    hasMovesInCommon,
 };
