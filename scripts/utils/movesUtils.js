@@ -1,4 +1,5 @@
 import { BoardUtils } from './boardUtils.js';
+import { FILES, RANKS } from '../constants/boardConstants.js';
 
 function generateHorizontalMoves(currentFile, currentRank, limit, includeCurrentPlacement = false) {
     let horizontals = [];
@@ -181,6 +182,78 @@ function generateMovesBetweenPlacements(file1, rank1, file2, rank2, includePlace
     }
 }
 
+function generateMovesLineThroughPlacements(file1, rank1, file2, rank2) {
+    // Calculate smallest file and rank, largest file and rank and difference between ranks and files
+    const minFile = Math.min(file1, file2);
+    const maxFile = Math.max(file1, file2);
+    const minRank = Math.min(rank1, rank2);
+    const maxRank = Math.max(rank1, rank2);
+    const dFile = maxFile - minFile;
+    const dRank = maxRank - minRank;
+
+    // Line
+    let lineMoves = [];
+
+    // Check if is horizontal move
+    if (dFile === 0 && dRank > 0) {
+        lineMoves = generateHorizontalMoves(file1, 1, RANKS, true).flat();
+    } else if (dFile > 0 && dRank === 0) {
+        // Check if is vertical move
+        lineMoves = generateVerticalMoves(1, rank1, FILES, true).flat();
+    } else if (dFile === dRank) {
+        // Check if placement is the same
+        if (file1 === file2 && rank1 === rank2) {
+            return [];
+        }
+        // Get generate diagonals from move with smallest file
+        let smallestFileMove, largestFileMove;
+        if (file1 < file2) {
+            smallestFileMove = { file: file1, rank: rank1 };
+            largestFileMove = { file: file2, rank: rank2 };
+        } else {
+            smallestFileMove = { file: file2, rank: rank2 };
+            largestFileMove = { file: file1, rank: rank1 };
+        }
+        let diagonals = generateDiagonalMoves(smallestFileMove.file, smallestFileMove.rank, FILES, false);
+
+        // Get first diagonal which contains the largest move
+        let firstDiagonal = diagonals.find((diagonal) =>
+            diagonal.some((placement) => placement.file === largestFileMove.file && placement.rank === largestFileMove.rank),
+        );
+        firstDiagonal.unshift(smallestFileMove);
+
+        // Get placement opposite of largest placement in firstDiagonal
+        let moveToFind;
+        if (smallestFileMove.rank < largestFileMove.rank) {
+            // Case for diagonal: /
+            const largestMove = firstDiagonal.find((move) => move.file === 8 || move.rank === 8);
+            if (largestMove.file === 8) {
+                moveToFind = { file: FILES - largestMove.rank + 1, rank: 1 };
+            } else {
+                moveToFind = { file: 1, rank: RANKS - largestMove.file + 1 };
+            }
+        } else {
+            // Case for diagonal: \
+            const largestMove = firstDiagonal.find((move) => move.file === 8 || move.rank === 1);
+            moveToFind = { file: largestMove.rank, rank: largestMove.file };
+        }
+
+        // Get secondDiagonal
+        let secondDiagonal = diagonals.find((diagonal) =>
+            diagonal.some((placement) => placement.file === moveToFind.file && placement.rank === moveToFind.rank),
+        );
+
+        // Merge diagonals
+        lineMoves = [...secondDiagonal, ...firstDiagonal];
+    }
+
+    // Filter out duplicate moves in line
+    removeDuplicateMoves(lineMoves);
+
+    // Return moves in line
+    return lineMoves;
+}
+
 function truncateMoveDirections(moveDirections, pieces, movingPiece, keepSamePieceMoves = false) {
     // Loop over directions
     let foundPiece, count;
@@ -287,7 +360,7 @@ function filterMovesInCommon(moves, movesToCheck, keepMoves) {
 }
 
 function hasMovesInCommon(moves, movesToCheck) {
-    return moves.some(move => movesToCheck.some(moveToCheck => moveToCheck.file === move.file && moveToCheck.rank === move.rank));
+    return moves.some((move) => movesToCheck.some((moveToCheck) => moveToCheck.file === move.file && moveToCheck.rank === move.rank));
 }
 
 export const MovesUtils = {
@@ -298,6 +371,7 @@ export const MovesUtils = {
     generateVerticalMovesBetween,
     generateDiagonalMovesBetween,
     generateMovesBetweenPlacements,
+    generateMovesLineThroughPlacements,
     truncateMoveDirections,
     removeMovesWithEnemies,
     filterSamePieceMoves,

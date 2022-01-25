@@ -38,60 +38,30 @@ export class Board {
 
         // // Generate pieces
         const pieces = [];
-        // // Add dark pieces
-        // pieces.push(
-        //     new Rook(8, 1, false),
-        //     new Knight(8, 2, false),
-        //     new Bishop(8, 3, false),
-        //     new Queen(8, 4, false),
-        //     new King(8, 5, false),
-        //     new Bishop(8, 6, false),
-        //     new Knight(8, 7, false),
-        //     new Rook(8, 8, false),
-        // );
-        // addPawns(7, false); // Dark pawns
-        // // Add light pieces
-        // pieces.push(
-        //     new Rook(1, 1, true),
-        //     new Knight(1, 2, true),
-        //     new Bishop(1, 3, true),
-        //     new Queen(1, 4, true),
-        //     new King(1, 5, true),
-        //     new Bishop(1, 6, true),
-        //     new Knight(1, 7, true),
-        //     new Rook(1, 8, true),
-        // );
-        // addPawns(2, true); // Light pawns
-
-        // pieces.push(new Queen(4, 8, false));
-        // // pieces.push(new Pawn(3, 7, true));
-        // pieces.push(new Pawn(2, 6, true));
-        // pieces.push(new Rook(4, 5, false));
-        // pieces.push(new Pawn(3, 5, true));
-
+        // Add dark pieces
         pieces.push(
             new Rook(8, 1, false),
-            new Pawn(7, 2, false),
-            new King(7, 6, false, false),
-            new Pawn(7, 7, false),
-            new Knight(6, 1, false),
-            new Knight(6, 3, false),
-            new Bishop(6, 5, false),
-            new Pawn(5, 1, false, false),
-            new Queen(5, 4, true),
-            new Bishop(4, 6, true),
-            new Pawn(4, 8, true, false),
-            new Pawn(3, 1, true, false),
-            new Pawn(2, 2, true),
-            new Queen(2, 3, false),
-            new Bishop(2, 5, true),
-            new Pawn(2, 6, true),
-            new Pawn(2, 7, true),
+            new Knight(8, 2, false),
+            new Bishop(8, 3, false),
+            new Queen(8, 4, false),
+            new King(8, 5, false),
+            new Bishop(8, 6, false),
+            new Knight(8, 7, false),
+            new Rook(8, 8, false),
+        );
+        addPawns(7, false); // Dark pawns
+        // Add light pieces
+        pieces.push(
             new Rook(1, 1, true),
             new Knight(1, 2, true),
+            new Bishop(1, 3, true),
+            new Queen(1, 4, true),
             new King(1, 5, true),
+            new Bishop(1, 6, true),
+            new Knight(1, 7, true),
             new Rook(1, 8, true),
         );
+        addPawns(2, true); // Light pawns
 
         // Set pieces
         this.pieces = pieces;
@@ -240,9 +210,24 @@ export class Board {
 
         // Check if is king
         if (movingPiece instanceof King) {
-            // Remove moves where enemy can attack
-            // TODO: Remove moves on entire file/rank/diagonal where enemy can attack, not only moves up until the king itself
+            // Get moves from enemy
+            const enemyMoves = this.enemyAttacks;
+            // Remove moves on where enemy can attack
             MovesUtils.filterMovesInCommon(joinedMoves, this.enemyAttacks, false);
+
+            // Find move that attacks king
+            const move = this.enemyAttacks.find((move) => move.file === movingPiece.file && move.rank === movingPiece.rank);
+            if (move?.enemyPiece) {
+                // Get move line (horizontal/vertical/diagonal) through king and enemy that is attacking king
+                const lineOfAttack = MovesUtils.generateMovesLineThroughPlacements(
+                    move.enemyPiece.file,
+                    move.enemyPiece.rank,
+                    movingPiece.file,
+                    movingPiece.rank,
+                );
+                // Remove moves on entire line where enemy can attack, not only moves up until the king itself
+                MovesUtils.filterMovesInCommon(joinedMoves, lineOfAttack, false);
+            }
         } else if (!isEnemyMoves) {
             /**
              * Block check
