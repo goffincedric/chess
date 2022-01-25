@@ -1,8 +1,5 @@
 import { Rook } from './pieces/rook.js';
-import { Knight } from './pieces/knight.js';
-import { Bishop } from './pieces/bishop.js';
 import { King } from './pieces/king.js';
-import { Queen } from './pieces/queen.js';
 import { Pawn } from './pieces/pawn.js';
 import { MovesUtils } from '../utils/movesUtils.js';
 import { BoardUtils } from '../utils/boardUtils.js';
@@ -13,6 +10,7 @@ export class Board {
     possibleMoves;
 
     isWhiteTurn;
+    pawnToPromote;
 
     moves;
 
@@ -36,32 +34,39 @@ export class Board {
             }
         }
 
-        // // Generate pieces
+        // Generate pieces
         const pieces = [];
-        // Add dark pieces
+        // // Add dark pieces
+        // pieces.push(
+        //     new Rook(8, 1, false),
+        //     new Knight(8, 2, false),
+        //     new Bishop(8, 3, false),
+        //     new Queen(8, 4, false),
+        //     new King(8, 5, false),
+        //     new Bishop(8, 6, false),
+        //     new Knight(8, 7, false),
+        //     new Rook(8, 8, false),
+        // );
+        // addPawns(7, false); // Dark pawns
+        // // Add light pieces
+        // pieces.push(
+        //     new Rook(1, 1, true),
+        //     new Knight(1, 2, true),
+        //     new Bishop(1, 3, true),
+        //     new Queen(1, 4, true),
+        //     new King(1, 5, true),
+        //     new Bishop(1, 6, true),
+        //     new Knight(1, 7, true),
+        //     new Rook(1, 8, true),
+        // );
+        // addPawns(2, true); // Light pawns
+
         pieces.push(
-            new Rook(8, 1, false),
-            new Knight(8, 2, false),
-            new Bishop(8, 3, false),
-            new Queen(8, 4, false),
-            new King(8, 5, false),
-            new Bishop(8, 6, false),
-            new Knight(8, 7, false),
-            new Rook(8, 8, false),
+            new King(3, 5, false, false),
+            new Pawn(7, 4, true, false),
+            new King(6, 5, true, false),
+            new Pawn(2, 4, false, false),
         );
-        addPawns(7, false); // Dark pawns
-        // Add light pieces
-        pieces.push(
-            new Rook(1, 1, true),
-            new Knight(1, 2, true),
-            new Bishop(1, 3, true),
-            new Queen(1, 4, true),
-            new King(1, 5, true),
-            new Bishop(1, 6, true),
-            new Knight(1, 7, true),
-            new Rook(1, 8, true),
-        );
-        addPawns(2, true); // Light pawns
 
         // Set pieces
         this.pieces = pieces;
@@ -120,21 +125,40 @@ export class Board {
                     move.castling.piece.setPlacement(move.castling.file, move.castling.rank);
                 }
 
-                // TODO: Check if is pawn exchange for rook, knight, bishop or queen
-                //  If yes, show pieces to choose from
-                //  If piece is chosen, remove pawn from game, create new chosen piece and set isFirstMove to false,
-                //      otherwise and illegal castle move is possible
+                // Check if is pawn promotion
+                if (piece instanceof Pawn && piece.file === piece.promotionFile) {
+                    this.pawnToPromote = piece;
+                } else {
+                    // Add move to moves
+                    this.moves.push(move);
 
-                // Add move to moves
-                this.moves.push(move);
-
-                // Set next turn
-                this.toggleTurn();
+                    // Set next turn
+                    this.toggleTurn();
+                }
             }
         }
 
         // Reset moving piece
         this.resetMovingPiece();
+    }
+
+    promotePawn(promotedPiece) {
+        // Get pawn to promote
+        const pawnToPromote = this.pieces.find(piece => piece.isWhite === this.isWhiteTurn && piece instanceof Pawn && piece.file === piece.promotionFile);
+        if (pawnToPromote) {
+            // Create promoted piece (has already moved, prevents illegal castling move
+            // const promotedPiece = new ChosenPieceClass(pawnToPromote.file, pawnToPromote.rank, false);
+
+            // Remove pawn from game
+            const indexToRemove = this.pieces.indexOf(pawnToPromote);
+            this.pieces.splice(indexToRemove, 1);
+
+            // Add promotedPiece to pieces
+            this.pieces.push(promotedPiece);
+
+            // Clear piece to promote
+            this.pawnToPromote = null;
+        }
     }
 
     toggleTurn() {
@@ -151,7 +175,7 @@ export class Board {
 
     getEnemyAttacks() {
         // Get enemy pieces
-        const enemyPieces = this.getEnemyPieces();
+        const enemyPieces = this.getPiecesOfTeam(true);
 
         // Calculate moves for each piece and return
         return enemyPieces.map((piece) => this.getMoves(piece, true)).flat();
@@ -245,7 +269,7 @@ export class Board {
              * Don't break blocked check
              */
             if (joinedMoves.length > 0) {
-                const slidingPieces = this.getEnemyPieces().filter(
+                const slidingPieces = this.getPiecesOfTeam(true).filter(
                     (piece) => piece.isSlidingPiece && !(piece instanceof Pawn || piece instanceof King),
                 );
                 slidingPieces.forEach((slidingEnemyPiece) => {
@@ -428,7 +452,7 @@ export class Board {
         return this.pieces.find((piece) => piece.file === file && piece.rank === rank);
     }
 
-    getEnemyPieces() {
-        return this.pieces.filter((piece) => piece.isWhite !== this.isWhiteTurn);
+    getPiecesOfTeam(enemy) {
+        return this.pieces.filter((piece) => (enemy && piece.isWhite !== this.isWhiteTurn) || (!enemy && piece.isWhite === this.isWhiteTurn));
     }
 }

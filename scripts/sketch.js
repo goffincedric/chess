@@ -2,14 +2,38 @@ import { BOARD_SIZE, COLORS, FILE_SIZE, FILES, RANK_SIZE, RANKS } from './consta
 import { Board } from './models/board.js';
 import { BoardUtils } from './utils/boardUtils.js';
 import { CanvasUtils } from './utils/canvasUtils.js';
+import { Rook } from './models/pieces/rook.js';
+import { Knight } from './models/pieces/knight.js';
+import { Bishop } from './models/pieces/bishop.js';
+import { Queen } from './models/pieces/queen.js';
 
 // Initialize board
 let chessBoard = new Board();
+
+// Initialize pawn promotion object
+let pawnPromotion = {
+    hasSetPiecePositions: false,
+    white: {
+        rook: new Rook(1, 1, true, false),
+        knight: new Knight(1, 1, true, false),
+        bishop: new Bishop(1, 1, true, false),
+        queen: new Queen(1, 1, true, false),
+    },
+    dark: {
+        rook: new Rook(1, 1, false, false),
+        knight: new Knight(1, 1, false, false),
+        bishop: new Bishop(1, 1, false, false),
+        queen: new Queen(1, 1, false, false),
+    },
+};
 
 // Preload data
 function preload() {
     // Load piece assets
     chessBoard.pieces.forEach((piece) => piece.loadAsset());
+
+    // Load promotion piece assets
+    [...Object.values(pawnPromotion.white), ...Object.values(pawnPromotion.dark)].forEach((piece) => piece.loadAsset());
 }
 
 // Canvas initialization function, called once at start
@@ -36,13 +60,18 @@ function draw() {
     drawBoard();
 
     // Draw enemy moves
-    drawEnemyMoves();
+    // drawEnemyMoves();
 
     // Draw possible moves
     drawMoves();
 
     // Draw pieces
     drawPieces();
+
+    // Draw pawn promotion screen
+    if (chessBoard.pawnToPromote) {
+        drawPawnPromotion();
+    }
 }
 
 // Draw board on canvas
@@ -123,24 +152,87 @@ function drawPieces() {
     }
 }
 
+function drawPawnPromotion() {
+    // Get pawn to promote
+    const pawnToPromote = chessBoard.pawnToPromote;
+    // Get pieces to promote to
+    let promotionPieces = [
+        (chessBoard.isWhiteTurn ? pawnPromotion.white : pawnPromotion.dark).rook,
+        (chessBoard.isWhiteTurn ? pawnPromotion.white : pawnPromotion.dark).knight,
+        (chessBoard.isWhiteTurn ? pawnPromotion.white : pawnPromotion.dark).bishop,
+        (chessBoard.isWhiteTurn ? pawnPromotion.white : pawnPromotion.dark).queen,
+    ];
+    // Calculate file for box and pieces
+    let file = chessBoard.isWhiteTurn ? pawnToPromote.file : promotionPieces.length;
+
+    // Draw box
+    const boxPosition = BoardUtils.placementToPosition(file, pawnToPromote.rank);
+    const strokeWidth = 1;
+    stroke('#222');
+    strokeWeight(strokeWidth);
+    fill(COLORS.LIGHT);
+    rect(boxPosition.x, boxPosition.y + strokeWidth / 2, RANK_SIZE, FILE_SIZE * 4 - strokeWidth);
+
+    // Set piece positions if not done yet
+    if (!pawnPromotion.hasSetPiecePositions) {
+        console.log(file, file, FILES);
+
+        // Set piece positions
+        promotionPieces.forEach((piece, index) => piece.setPlacement(Math.min(file, FILES) - index, pawnToPromote.rank));
+
+        pawnPromotion.hasSetPiecePositions = true;
+    }
+
+    // Get position from pieces and set image position
+    let position;
+    promotionPieces.forEach((piece) => {
+        position = BoardUtils.placementToPosition(piece.file, piece.rank);
+        // Draw promotion pieces
+        image(piece.asset, position.x, position.y, RANK_SIZE, FILE_SIZE);
+        line(position.x, position.y, position.x + RANK_SIZE, position.y);
+    });
+}
+
 // Mouse pressed listener
 function mousePressed() {
-    if (CanvasUtils.isInCanvas(mouseX, mouseY)) {
-        // Check if position has piece
-        const piece = chessBoard.getPieceByPosition(mouseX, mouseY);
-        if (piece && piece.isWhite === chessBoard.isWhiteTurn) {
-            chessBoard.setMovingPiece(piece);
-        }
+    // Return if click is not on canvas position
+    if (!CanvasUtils.isInCanvas(mouseX, mouseY)) return;
+
+    // Check if is pawn promotion
+    if (chessBoard.pawnToPromote && pawnPromotion.hasSetPiecePositions) {
+        choosePromotionPiece();
+    } else {
+        movePiece();
     }
 }
 
 // Mouse released listener
 function mouseReleased() {
-    if (CanvasUtils.isInCanvas(mouseX, mouseY) && chessBoard.movingPiece) {
-        // Get placement on board
-        const newPlacement = BoardUtils.positionToPlacement(mouseX, mouseY);
-        // Set piece to new placement
-        chessBoard.movePiece(chessBoard.movingPiece, newPlacement.file, newPlacement.rank);
+    // Return if release is not on canvas position, is not moving piece or is promoting pawn
+    if (!CanvasUtils.isInCanvas(mouseX, mouseY) || !chessBoard.movingPiece || chessBoard.pawnToPromote) return;
+
+    // Get placement on board
+    const newPlacement = BoardUtils.positionToPlacement(mouseX, mouseY);
+    // Set piece to new placement
+    chessBoard.movePiece(chessBoard.movingPiece, newPlacement.file, newPlacement.rank);
+}
+
+function choosePromotionPiece() {
+    console.log('Choose promotion piece');
+    // Get pawn to promote
+    const pawnToPromote = chessBoard.pawnToPromote;
+
+    // TODO: Check which piece to promote to (load image issues, don't reuse pawnPromotion object piece -> problems with duplicate placements, assets, ...)
+    const queen = new Queen(pawnToPromote.file, pawnToPromote.rank, pawnToPromote.isWhite, false);
+    queen.asset = pawnPromotion.white.queen;
+    chessBoard.promotePawn(queen);
+}
+
+function movePiece() {
+    // Check if position has piece
+    const piece = chessBoard.getPieceByPosition(mouseX, mouseY);
+    if (piece && piece.isWhite === chessBoard.isWhiteTurn) {
+        chessBoard.setMovingPiece(piece);
     }
 }
 

@@ -1,8 +1,11 @@
 import { Piece } from './piece.js';
 
 export class Pawn extends Piece {
+    promotionFile;
+
     constructor(file, rank, isWhite, isFirstMove = true) {
         super(file, rank, isWhite, 'p', true, isFirstMove);
+        this.promotionFile = this.isWhite ? 8 : 1;
     }
 
     getMoves() {
