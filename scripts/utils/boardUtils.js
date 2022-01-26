@@ -1,16 +1,16 @@
-import { FILE_SIZE, FILES, RANK_SIZE, RANKS } from '../constants/boardConstants.js';
+import { SQUARE_SIZE, FILES, RANKS, BOARD_OFFSET } from '../constants/boardConstants.js';
 
 function positionToPlacement(x, y) {
-    const rank = Math.floor(x / RANK_SIZE) + 1;
-    const file = FILES - Math.floor(Math.abs(y + 1) / FILE_SIZE);
+    const rank = Math.floor((x - BOARD_OFFSET) / SQUARE_SIZE) + 1;
+    const file = FILES - Math.floor(Math.abs((y - BOARD_OFFSET) + 1) / SQUARE_SIZE);
     return {
         rank,
         file,
     };
 }
 function placementToPosition(file, rank) {
-    const x = (rank - 1) * RANK_SIZE;
-    const y = (FILES - file) * FILE_SIZE;
+    const x = (rank - 1) * SQUARE_SIZE + BOARD_OFFSET;
+    const y = (FILES - file) * SQUARE_SIZE + BOARD_OFFSET;
     return {
         x,
         y,

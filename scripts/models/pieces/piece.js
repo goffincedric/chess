@@ -1,4 +1,4 @@
-import { FILE_SIZE, RANK_SIZE } from '../../constants/boardConstants.js';
+import { SQUARE_SIZE } from '../../constants/boardConstants.js';
 import { BoardUtils } from '../../utils/boardUtils.js';
 
 export class Piece {
@@ -7,8 +7,6 @@ export class Piece {
     isWhite;
     fenName;
     isSlidingPiece;
-
-    asset;
 
     isMoving;
     isFirstMove;
@@ -32,10 +30,6 @@ export class Piece {
         return 'assets/' + this.fenName + '_' + (this.isWhite ? 'l' : 'd') + '.svg';
     }
 
-    loadAsset() {
-        this.asset = loadImage(this.getAssetUrl());
-    }
-
     setPlacement(file, rank) {
         this.file = file;
         this.rank = rank;
@@ -51,8 +45,8 @@ export class Piece {
         return {
             x: position.x,
             y: position.y,
-            dx: position.x + RANK_SIZE - 1,
-            dy: position.y + FILE_SIZE - 1,
+            dx: position.x + SQUARE_SIZE - 1,
+            dy: position.y + SQUARE_SIZE - 1,
         };
     }
 }

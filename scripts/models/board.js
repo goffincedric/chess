@@ -61,12 +61,7 @@ export class Board {
         // );
         // addPawns(2, true); // Light pawns
 
-        pieces.push(
-            new King(3, 5, false, false),
-            new Pawn(7, 4, true, false),
-            new King(6, 5, true, false),
-            new Pawn(2, 4, false, false),
-        );
+        pieces.push(new King(3, 5, false, false), new Pawn(7, 4, true, false), new King(6, 5, true, false), new Pawn(2, 4, false, false));
 
         // Set pieces
         this.pieces = pieces;
@@ -82,8 +77,15 @@ export class Board {
     }
 
     setMovingPiece(piece) {
-        this.movingPiece = piece;
-        this.possibleMoves = this.getMoves(piece);
+        if (piece) {
+            this.movingPiece = piece;
+            this.possibleMoves = this.getMoves(piece);
+        }
+    }
+
+    clearMovingPiece() {
+        this.movingPiece = null;
+        this.possibleMoves = null;
     }
 
     resetMovingPiece() {
@@ -144,7 +146,9 @@ export class Board {
 
     promotePawn(promotedPiece) {
         // Get pawn to promote
-        const pawnToPromote = this.pieces.find(piece => piece.isWhite === this.isWhiteTurn && piece instanceof Pawn && piece.file === piece.promotionFile);
+        const pawnToPromote = this.pieces.find(
+            (piece) => piece.isWhite === this.isWhiteTurn && piece instanceof Pawn && piece.file === piece.promotionFile,
+        );
         if (pawnToPromote) {
             // Create promoted piece (has already moved, prevents illegal castling move
             // const promotedPiece = new ChosenPieceClass(pawnToPromote.file, pawnToPromote.rank, false);
@@ -158,6 +162,9 @@ export class Board {
 
             // Clear piece to promote
             this.pawnToPromote = null;
+
+            // Toggle turn
+            this.toggleTurn();
         }
     }
 
@@ -453,6 +460,8 @@ export class Board {
     }
 
     getPiecesOfTeam(enemy) {
-        return this.pieces.filter((piece) => (enemy && piece.isWhite !== this.isWhiteTurn) || (!enemy && piece.isWhite === this.isWhiteTurn));
+        return this.pieces.filter(
+            (piece) => (enemy && piece.isWhite !== this.isWhiteTurn) || (!enemy && piece.isWhite === this.isWhiteTurn),
+        );
     }
 }

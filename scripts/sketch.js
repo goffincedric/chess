@@ -1,4 +1,14 @@
-import { BOARD_SIZE, COLORS, FILE_SIZE, FILES, RANK_SIZE, RANKS } from './constants/boardConstants.js';
+import {
+    BOARD_BORDER_STROKE_WIDTH,
+    BOARD_BORDER_WIDTH,
+    BOARD_OFFSET,
+    BOARD_SIZE,
+    CANVAS_SIZE,
+    COLORS,
+    FILES,
+    RANKS,
+    SQUARE_SIZE,
+} from './constants/boardConstants.js';
 import { Board } from './models/board.js';
 import { BoardUtils } from './utils/boardUtils.js';
 import { CanvasUtils } from './utils/canvasUtils.js';
@@ -6,6 +16,9 @@ import { Rook } from './models/pieces/rook.js';
 import { Knight } from './models/pieces/knight.js';
 import { Bishop } from './models/pieces/bishop.js';
 import { Queen } from './models/pieces/queen.js';
+import { AssetUtils } from './utils/assetUtils.js';
+import { Pawn } from './models/pieces/pawn.js';
+import { King } from './models/pieces/king.js';
 
 // Initialize board
 let chessBoard = new Board();
@@ -27,13 +40,29 @@ let pawnPromotion = {
     },
 };
 
+/**
+ * P5 hooks
+ */
 // Preload data
 function preload() {
-    // Load piece assets
-    chessBoard.pieces.forEach((piece) => piece.loadAsset());
-
-    // Load promotion piece assets
-    [...Object.values(pawnPromotion.white), ...Object.values(pawnPromotion.dark)].forEach((piece) => piece.loadAsset());
+    // Load piece assets and store in AssetUtils
+    const assetUrls = [
+        new Pawn(1, 1, true).getAssetUrl(),
+        new Pawn(1, 1, false).getAssetUrl(),
+        new Rook(1, 1, true).getAssetUrl(),
+        new Rook(1, 1, false).getAssetUrl(),
+        new Knight(1, 1, true).getAssetUrl(),
+        new Knight(1, 1, false).getAssetUrl(),
+        new Bishop(1, 1, true).getAssetUrl(),
+        new Bishop(1, 1, false).getAssetUrl(),
+        new Queen(1, 1, true).getAssetUrl(),
+        new Queen(1, 1, false).getAssetUrl(),
+        new King(1, 1, true).getAssetUrl(),
+        new King(1, 1, false).getAssetUrl(),
+    ];
+    assetUrls.forEach((url) => {
+        AssetUtils.storeAsset(url, loadImage(url));
+    });
 }
 
 // Canvas initialization function, called once at start
@@ -42,7 +71,10 @@ function setup() {
     background(color('#833030'));
 
     // Create canvas element to draw on
-    createCanvas(BOARD_SIZE, BOARD_SIZE);
+    createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+
+    // Draw border
+    drawBorder();
 
     // Draw chess board
     drawBoard();
@@ -55,6 +87,9 @@ function setup() {
 function draw() {
     // Clear canvas
     clear();
+
+    // Draw border
+    drawBorder();
 
     // Draw chess board
     drawBoard();
@@ -74,8 +109,66 @@ function draw() {
     }
 }
 
+/**
+ * Functions that draw on canvas
+ */
+// Draw border around board
+function drawBorder() {
+    // Draw border
+    noStroke();
+    fill(color(COLORS.DARK));
+    rect(0, 0, BOARD_OFFSET * 2 + BOARD_SIZE, CANVAS_SIZE);
+
+    // Set text color
+    fill(color(COLORS.LIGHT));
+    textSize(25);
+    textAlign(CENTER, CENTER);
+
+    // Add file markings to border
+    function addFileMarkings(xOffset, upsideDown = false) {
+        for (let i = 0; i < FILES; i++) {
+            if (upsideDown) {
+                push();
+                translate(xOffset, BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2);
+                rotate(radians(180));
+                text(`${FILES - i}`, 0, 0);
+                pop();
+            } else {
+                text(`${FILES - i}`, xOffset, BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2);
+            }
+        }
+    }
+    addFileMarkings(BOARD_OFFSET / 2);
+    addFileMarkings(BOARD_SIZE + BOARD_OFFSET * 1.5, true);
+    // Add rank markings to borders
+    function addRankMarkings(yOffset, upsideDown = false) {
+        let asciiOffset = 65;
+        for (let i = 0; i < RANKS; i++) {
+            if (upsideDown) {
+                push();
+                translate(BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2, yOffset);
+                rotate(radians(180));
+                text(String.fromCharCode(i + asciiOffset), 0, 0);
+                pop();
+            } else {
+                text(String.fromCharCode(i + asciiOffset), BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2, yOffset);
+            }
+        }
+    }
+    addRankMarkings(BOARD_OFFSET / 2, true);
+    addRankMarkings(BOARD_SIZE + BOARD_OFFSET * 1.5);
+}
+
 // Draw board on canvas
 function drawBoard() {
+    noStroke();
+
+    // Draw small stroke around board
+    const rectSize = BOARD_BORDER_STROKE_WIDTH * 2 + BOARD_SIZE;
+    fill(color(COLORS.LIGHT));
+    rect(BOARD_BORDER_WIDTH, BOARD_BORDER_WIDTH, rectSize, rectSize);
+
+    // Draw squares on board
     noStroke();
     for (let file = 1; file <= FILES; file++) {
         for (let rank = 1; rank <= RANKS; rank++) {
@@ -133,10 +226,11 @@ function drawMoves() {
     }
 }
 
-function drawSquare(file, rank, moveColor) {
-    fill(color(moveColor));
+// Draw square on canvas using placement
+function drawSquare(file, rank, squareColor) {
+    fill(color(squareColor));
     const position = BoardUtils.placementToPosition(file, rank);
-    rect(position.x, position.y, RANK_SIZE, FILE_SIZE);
+    rect(position.x, position.y, SQUARE_SIZE, SQUARE_SIZE);
 }
 
 // Draw pieces on board
@@ -144,24 +238,22 @@ function drawPieces() {
     chessBoard.pieces.forEach((piece) => {
         if (piece !== chessBoard.movingPiece) {
             let position = piece.getPosition();
-            image(piece.asset, position.x, position.y, RANK_SIZE, FILE_SIZE);
+            const asset = AssetUtils.getAsset(piece.getAssetUrl());
+            image(asset, position.x, position.y, SQUARE_SIZE, SQUARE_SIZE);
         }
     });
     if (chessBoard.movingPiece) {
-        image(chessBoard.movingPiece.asset, mouseX - FILE_SIZE / 2, mouseY - RANK_SIZE / 2, RANK_SIZE, FILE_SIZE);
+        const asset = AssetUtils.getAsset(chessBoard.movingPiece.getAssetUrl());
+        image(asset, mouseX - SQUARE_SIZE / 2, mouseY - SQUARE_SIZE / 2, SQUARE_SIZE, SQUARE_SIZE);
     }
 }
 
+// Draw pawn promotion container
 function drawPawnPromotion() {
     // Get pawn to promote
     const pawnToPromote = chessBoard.pawnToPromote;
     // Get pieces to promote to
-    let promotionPieces = [
-        (chessBoard.isWhiteTurn ? pawnPromotion.white : pawnPromotion.dark).rook,
-        (chessBoard.isWhiteTurn ? pawnPromotion.white : pawnPromotion.dark).knight,
-        (chessBoard.isWhiteTurn ? pawnPromotion.white : pawnPromotion.dark).bishop,
-        (chessBoard.isWhiteTurn ? pawnPromotion.white : pawnPromotion.dark).queen,
-    ];
+    let promotionPieces = Object.values(chessBoard.isWhiteTurn ? pawnPromotion.white : pawnPromotion.dark);
     // Calculate file for box and pieces
     let file = chessBoard.isWhiteTurn ? pawnToPromote.file : promotionPieces.length;
 
@@ -171,12 +263,10 @@ function drawPawnPromotion() {
     stroke('#222');
     strokeWeight(strokeWidth);
     fill(COLORS.LIGHT);
-    rect(boxPosition.x, boxPosition.y + strokeWidth / 2, RANK_SIZE, FILE_SIZE * 4 - strokeWidth);
+    rect(boxPosition.x, boxPosition.y + strokeWidth / 2, SQUARE_SIZE, SQUARE_SIZE * 4 - strokeWidth);
 
     // Set piece positions if not done yet
     if (!pawnPromotion.hasSetPiecePositions) {
-        console.log(file, file, FILES);
-
         // Set piece positions
         promotionPieces.forEach((piece, index) => piece.setPlacement(Math.min(file, FILES) - index, pawnToPromote.rank));
 
@@ -188,15 +278,19 @@ function drawPawnPromotion() {
     promotionPieces.forEach((piece) => {
         position = BoardUtils.placementToPosition(piece.file, piece.rank);
         // Draw promotion pieces
-        image(piece.asset, position.x, position.y, RANK_SIZE, FILE_SIZE);
-        line(position.x, position.y, position.x + RANK_SIZE, position.y);
+        const asset = AssetUtils.getAsset(piece.getAssetUrl());
+        image(asset, position.x, position.y, SQUARE_SIZE, SQUARE_SIZE);
+        line(position.x, position.y, position.x + SQUARE_SIZE, position.y);
     });
 }
 
+/**
+ * Event listeners
+ */
 // Mouse pressed listener
 function mousePressed() {
-    // Return if click is not on canvas position
-    if (!CanvasUtils.isInCanvas(mouseX, mouseY)) return;
+    // Return if click is not on board position
+    if (!CanvasUtils.isInBoard(mouseX, mouseY)) return;
 
     // Check if is pawn promotion
     if (chessBoard.pawnToPromote && pawnPromotion.hasSetPiecePositions) {
@@ -208,8 +302,13 @@ function mousePressed() {
 
 // Mouse released listener
 function mouseReleased() {
-    // Return if release is not on canvas position, is not moving piece or is promoting pawn
-    if (!CanvasUtils.isInCanvas(mouseX, mouseY) || !chessBoard.movingPiece || chessBoard.pawnToPromote) return;
+    // Reset moving piece if is released outside board position
+    if (!CanvasUtils.isInBoard(mouseX, mouseY)) {
+        chessBoard.clearMovingPiece();
+    }
+
+    // Return if is not moving piece or is promoting pawn
+    if (!chessBoard.movingPiece || chessBoard.pawnToPromote) return;
 
     // Get placement on board
     const newPlacement = BoardUtils.positionToPlacement(mouseX, mouseY);
@@ -218,14 +317,24 @@ function mouseReleased() {
 }
 
 function choosePromotionPiece() {
-    console.log('Choose promotion piece');
     // Get pawn to promote
     const pawnToPromote = chessBoard.pawnToPromote;
 
-    // TODO: Check which piece to promote to (load image issues, don't reuse pawnPromotion object piece -> problems with duplicate placements, assets, ...)
-    const queen = new Queen(pawnToPromote.file, pawnToPromote.rank, pawnToPromote.isWhite, false);
-    queen.asset = pawnPromotion.white.queen;
-    chessBoard.promotePawn(queen);
+    // Get piece to promote to
+    const placement = BoardUtils.positionToPlacement(mouseX, mouseY);
+    const chosenPiece = Object.values(chessBoard.isWhiteTurn ? pawnPromotion.white : pawnPromotion.dark).find(
+        (piece) => piece.file === placement.file && piece.rank === placement.rank,
+    );
+    if (chosenPiece) {
+        // Create new instance of chosen piece
+        const promotedPiece = new chosenPiece.constructor(pawnToPromote.file, pawnToPromote.rank, pawnToPromote.isWhite, false);
+
+        // Promote piece
+        chessBoard.promotePawn(promotedPiece);
+
+        // Set promotion pieces position flag to false
+        pawnPromotion.hasSetPiecePositions = false;
+    }
 }
 
 function movePiece() {
@@ -245,7 +354,6 @@ window.mousePressed = mousePressed;
 
 /**
  * TODO:
- *  * Pick Rook/Knight/Bishop/Queen when pawn reaches other side
  *  * Reset game on win/loss
  *  * Pick starting color
  *  * Chessboard markings (files, ranks)
