@@ -125,33 +125,39 @@ function drawBorder() {
     textAlign(CENTER, CENTER);
 
     // Add file markings to border
-    function addFileMarkings(xOffset, upsideDown = false) {
+    function addFileMarkings(xPos, upsideDown = false) {
+        let marking, yPos;
         for (let i = 0; i < FILES; i++) {
+            marking = `${FILES - i}`;
+            yPos = BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2;
             if (upsideDown) {
                 push();
-                translate(xOffset, BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2);
+                translate(xPos, yPos);
                 rotate(radians(180));
-                text(`${FILES - i}`, 0, 0);
+                text(marking, 0, 0);
                 pop();
             } else {
-                text(`${FILES - i}`, xOffset, BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2);
+                text(marking, xPos, yPos);
             }
         }
     }
     addFileMarkings(BOARD_OFFSET / 2);
     addFileMarkings(BOARD_SIZE + BOARD_OFFSET * 1.5, true);
     // Add rank markings to borders
-    function addRankMarkings(yOffset, upsideDown = false) {
+    function addRankMarkings(yPos, upsideDown = false) {
         let asciiOffset = 65;
+        let marking, xPos;
         for (let i = 0; i < RANKS; i++) {
+            marking = String.fromCharCode(i + asciiOffset);
+            xPos = BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2;
             if (upsideDown) {
                 push();
-                translate(BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2, yOffset);
+                translate(xPos, yPos);
                 rotate(radians(180));
-                text(String.fromCharCode(i + asciiOffset), 0, 0);
+                text(marking, 0, 0);
                 pop();
             } else {
-                text(String.fromCharCode(i + asciiOffset), BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2, yOffset);
+                text(marking, xPos, yPos);
             }
         }
     }
