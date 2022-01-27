@@ -21,8 +21,13 @@ function isOnBoard(file, rank) {
     return file >= 1 && file <= FILES && rank >= 1 && rank <= RANKS;
 }
 
+function isLightSquare(file, rank) {
+    return (file + rank) % 2 !== 0;
+}
+
 export const BoardUtils = {
     positionToPlacement,
     placementToPosition,
     isOnBoard,
+    isLightSquare,
 };

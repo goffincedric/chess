@@ -6,6 +6,8 @@ import {
     CANVAS_SIZE,
     COLORS,
     FILES,
+    GAME_END_DIALOG,
+    GAMESTATES,
     RANKS,
     SQUARE_SIZE,
 } from './constants/boardConstants.js';
@@ -40,6 +42,9 @@ let pawnPromotion = {
     },
 };
 
+// Add listeners for dialogButtons
+const dialogButtonListeners = [];
+
 /**
  * P5 hooks
  */
@@ -68,7 +73,7 @@ function preload() {
 // Canvas initialization function, called once at start
 function setup() {
     // Set background for debug purposes
-    background(color('#833030'));
+    background(color(COLORS.DEBUG));
 
     // Create canvas element to draw on
     createCanvas(CANVAS_SIZE, CANVAS_SIZE);
@@ -107,6 +112,10 @@ function draw() {
     if (chessBoard.pawnToPromote) {
         drawPawnPromotion();
     }
+
+    if (![GAMESTATES.PLAYING, GAMESTATES.OBSERVING].includes(chessBoard.gameState)) {
+        drawGameEndDialog();
+    }
 }
 
 /**
@@ -141,8 +150,10 @@ function drawBorder() {
             }
         }
     }
+
     addFileMarkings(BOARD_OFFSET / 2);
     addFileMarkings(BOARD_SIZE + BOARD_OFFSET * 1.5, true);
+
     // Add rank markings to borders
     function addRankMarkings(yPos, upsideDown = false) {
         let asciiOffset = 65;
@@ -161,6 +172,7 @@ function drawBorder() {
             }
         }
     }
+
     addRankMarkings(BOARD_OFFSET / 2, true);
     addRankMarkings(BOARD_SIZE + BOARD_OFFSET * 1.5);
 }
@@ -179,7 +191,7 @@ function drawBoard() {
     for (let file = 1; file <= FILES; file++) {
         for (let rank = 1; rank <= RANKS; rank++) {
             // Decide if is light or dark square
-            let rectColor = (file + rank) % 2 !== 0 ? COLORS.LIGHT : COLORS.DARK;
+            let rectColor = BoardUtils.isLightSquare(file, rank) ? COLORS.LIGHT : COLORS.DARK;
             // Draw square
             drawSquare(file, rank, rectColor);
         }
@@ -207,7 +219,7 @@ function drawMoves() {
     if (chessBoard.movingPiece) {
         try {
             // Color possible moves
-            chessBoard.possibleMoves.forEach((move) => {
+            chessBoard.movingPieceMoves.forEach((move) => {
                 // Get piece if present
                 let piece = chessBoard.getPieceByPlacement(move.file, move.rank);
                 let rectColor;
@@ -266,7 +278,7 @@ function drawPawnPromotion() {
     // Draw box
     const boxPosition = BoardUtils.placementToPosition(file, pawnToPromote.rank);
     const strokeWidth = 1;
-    stroke('#222');
+    stroke(color(COLORS.DARKER));
     strokeWeight(strokeWidth);
     fill(COLORS.LIGHT);
     rect(boxPosition.x, boxPosition.y + strokeWidth / 2, SQUARE_SIZE, SQUARE_SIZE * 4 - strokeWidth);
@@ -290,6 +302,103 @@ function drawPawnPromotion() {
     });
 }
 
+// Draw End of game dialog
+function drawGameEndDialog() {
+    // Define what text to show
+    let title, description;
+    switch (chessBoard.gameState) {
+        case GAMESTATES.CHECKMATE:
+            title = 'Checkmate!';
+            description = `Checkmate, ${chessBoard.isWhiteTurn ? 'black' : 'white'} wins.`;
+            break;
+        case GAMESTATES.DRAW_STALEMATE:
+        case GAMESTATES.DRAW_INSUFFICIENT_PIECES:
+            title = "It's a draw!";
+            if (chessBoard.gameState === GAMESTATES.DRAW_STALEMATE)
+                description = `Stalemate, ${chessBoard.isWhiteTurn ? 'black' : 'white'} can't play any more moves.`;
+            else description = "Insufficient pieces to finish the game, it's a draw!";
+            break;
+    }
+
+    // Draw box
+    strokeWeight(2);
+    stroke(color(COLORS.DARK));
+    fill(color(COLORS.LIGHTER));
+    rect(GAME_END_DIALOG.X_POS, GAME_END_DIALOG.Y_POS, GAME_END_DIALOG.WIDTH, GAME_END_DIALOG.HEIGHT);
+
+    // Add title to box
+    let titleYOffset = 65;
+    fill(color(COLORS.DARK));
+    strokeWeight(0);
+    textSize(32);
+    textAlign(CENTER, CENTER);
+    text(title, GAME_END_DIALOG.X_POS + GAME_END_DIALOG.WIDTH / 2, GAME_END_DIALOG.Y_POS + titleYOffset);
+
+    // Add description to bx
+    let descriptionYOffset = titleYOffset + 50;
+    let descriptionXOffset = GAME_END_DIALOG.WIDTH / 9;
+    let textHeight = GAME_END_DIALOG.HEIGHT / 4;
+    let textWidth = descriptionXOffset * 7;
+    stroke(color(DARKEST));
+    textSize(24);
+    textAlign(CENTER, TOP);
+    text(description, GAME_END_DIALOG.X_POS + descriptionXOffset, GAME_END_DIALOG.Y_POS + descriptionYOffset, textWidth, textHeight);
+
+    // Add buttons to box
+    let borderOffset = GAME_END_DIALOG.WIDTH / 12;
+    let buttonHeight = 50;
+    let buttonWidth = borderOffset * 4;
+    let buttonXOffset = borderOffset;
+    let buttonYOffset = GAME_END_DIALOG.HEIGHT - buttonXOffset - buttonHeight;
+    function addButton(x, y, buttonText, clickListener) {
+        let x1 = x;
+        let y1 = y;
+        let x2 = x + buttonWidth;
+        let y2 = y + buttonHeight;
+
+        // Draw box
+        strokeWeight(2);
+        stroke(color(COLORS.DARK));
+        if (CanvasUtils.isPositionBetweenCoordinates(mouseX, mouseY, x1, y1, x2, y2)) {
+            fill(color(COLORS.BUTTON_HOVER));
+        } else {
+            fill(color(COLORS.LIGHT));
+        }
+        rect(x1, y1, buttonWidth, buttonHeight);
+
+        // Draw text
+        noStroke();
+        fill(color(COLORS.DARK));
+        textAlign(CENTER, CENTER);
+        text(buttonText, x + buttonWidth / 2, y + buttonHeight / 2);
+
+        // Add button to dialogListener
+        const foundListener = dialogButtonListeners.find((listener) => listener.id === buttonText);
+        if (!foundListener) {
+            dialogButtonListeners.push({
+                x1,
+                y1,
+                x2,
+                y2,
+                click: () => {
+                    // Execute listener
+                    clickListener();
+
+                    // Clear listeners
+                    dialogButtonListeners.splice(0);
+                },
+            });
+        }
+    }
+    // View board button
+    let xPos = GAME_END_DIALOG.X_POS + buttonXOffset;
+    let yPos = GAME_END_DIALOG.Y_POS + buttonYOffset;
+    addButton(xPos, yPos, 'View board', () => (chessBoard.gameState = GAMESTATES.OBSERVING));
+    // Reset game button
+    xPos = GAME_END_DIALOG.X_POS + buttonXOffset * 3 + buttonWidth;
+    addButton(xPos, yPos, 'Reset game', () => chessBoard.resetGame());
+}
+
 /**
  * Event listeners
  */
@@ -299,10 +408,17 @@ function mousePressed() {
     if (!CanvasUtils.isInBoard(mouseX, mouseY)) return;
 
     // Check if is pawn promotion
-    if (chessBoard.pawnToPromote && pawnPromotion.hasSetPiecePositions) {
+    if (chessBoard.gameState === GAMESTATES.PLAYING && chessBoard.pawnToPromote && pawnPromotion.hasSetPiecePositions) {
         choosePromotionPiece();
-    } else {
+    } else if (chessBoard.gameState === GAMESTATES.PLAYING) {
         movePiece();
+    } else if (chessBoard.gameState !== GAMESTATES.OBSERVING) {
+        // Look for dialog button click listeners
+        dialogButtonListeners.forEach((listener) => {
+            if (CanvasUtils.isPositionBetweenCoordinates(mouseX, mouseY, listener.x1, listener.y1, listener.x2, listener.y2)) {
+                listener.click();
+            }
+        });
     }
 }
 
@@ -351,20 +467,23 @@ function movePiece() {
     }
 }
 
-// Set global functions
+// Set global functions and export chessBoard
 window.preload = preload;
 window.setup = setup;
 window.draw = draw;
 window.mouseReleased = mouseReleased;
 window.mousePressed = mousePressed;
+window.chessBoard = chessBoard;
 
 /**
  * TODO:
- *  * Reset game on win/loss
  *  * Pick starting color
- *  * Chessboard markings (files, ranks)
  *  * Show captured pieces
+ *  * Add current color's turn on right side of canvas
  *  * Add FEN notation support (board initialization & moves)
+ *  * Add resignation button
+ *  * Add threefold move repetition check
+ *  * Add button to export moves (initial board setup + each consequent move)
  *  * Integrate in discord bot
  *  * Add AI
  */

@@ -284,10 +284,10 @@ function truncateMoveDirections(moveDirections, pieces, movingPiece, keepSamePie
 function removeMovesWithEnemies(moves, pieces, movingPiece) {
     const moveIndicesWithEnemies = [];
     // Look for moves where a piece of a different color is present
-    moves.forEach((move) => {
+    moves.forEach((move, index) => {
         const piece = pieces.find((piece) => piece.isWhite !== movingPiece.isWhite && move.file === piece.file && move.rank === piece.rank);
         if (piece) {
-            moveIndicesWithEnemies.push(moves.indexOf(move));
+            moveIndicesWithEnemies.push(index);
         }
     });
 
@@ -296,13 +296,27 @@ function removeMovesWithEnemies(moves, pieces, movingPiece) {
     moveIndicesWithEnemies.forEach((index) => moves.splice(index, 1));
 }
 
+function filterMovesNotOnBoard(moves) {
+    const moveIndicesToRemove = [];
+    // Look for moves to that are not on board
+    moves.forEach((move, index) => {
+        if (!BoardUtils.isOnBoard(move.file, move.rank)) {
+            moveIndicesToRemove.push(index);
+        }
+    });
+
+    // Remove moves from back to front
+    moveIndicesToRemove.reverse();
+    moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
+}
+
 function filterSamePieceMoves(moves, pieces, movingPiece) {
     const moveIndicesToRemove = [];
     // Look for moves to remove where a piece of the same color is present
-    moves.forEach((move) => {
+    moves.forEach((move, index) => {
         const piece = pieces.find((piece) => piece.isWhite === movingPiece.isWhite && move.file === piece.file && move.rank === piece.rank);
         if (piece) {
-            moveIndicesToRemove.push(moves.indexOf(move));
+            moveIndicesToRemove.push(index);
         }
     });
 
@@ -314,10 +328,10 @@ function filterSamePieceMoves(moves, pieces, movingPiece) {
 function filterEnemyPieceMoves(moves, pieces, movingPiece) {
     const moveIndicesToRemove = [];
     // Look for moves to remove where a piece of a different color is present
-    moves.forEach((move) => {
+    moves.forEach((move, index) => {
         const piece = pieces.find((piece) => piece.isWhite !== movingPiece.isWhite && move.file === piece.file && move.rank === piece.rank);
         if (!piece) {
-            moveIndicesToRemove.push(moves.indexOf(move));
+            moveIndicesToRemove.push(index);
         }
     });
 
@@ -363,6 +377,10 @@ function hasMovesInCommon(moves, movesToCheck) {
     return moves.some((move) => movesToCheck.some((moveToCheck) => moveToCheck.file === move.file && moveToCheck.rank === move.rank));
 }
 
+function flattenPieceMoves(moves) {
+    return Object.values(moves).flat(2).filter(move => move)
+}
+
 export const MovesUtils = {
     generateHorizontalMoves,
     generateVerticalMoves,
@@ -374,9 +392,11 @@ export const MovesUtils = {
     generateMovesLineThroughPlacements,
     truncateMoveDirections,
     removeMovesWithEnemies,
+    filterMovesNotOnBoard,
     filterSamePieceMoves,
     filterEnemyPieceMoves,
     removeDuplicateMoves,
     filterMovesInCommon,
     hasMovesInCommon,
+    flattenPieceMoves,
 };

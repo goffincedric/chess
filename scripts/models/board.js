@@ -3,11 +3,16 @@ import { King } from './pieces/king.js';
 import { Pawn } from './pieces/pawn.js';
 import { MovesUtils } from '../utils/movesUtils.js';
 import { BoardUtils } from '../utils/boardUtils.js';
+import { Knight } from './pieces/knight.js';
+import { Bishop } from './pieces/bishop.js';
+import { Queen } from './pieces/queen.js';
+import { GAMESTATES } from '../constants/boardConstants.js';
 
 export class Board {
     pieces;
+
     movingPiece;
-    possibleMoves;
+    movingPieceMoves;
 
     isWhiteTurn;
     pawnToPromote;
@@ -15,13 +20,30 @@ export class Board {
     moves;
 
     enemyAttacks = [];
+    currentPlayerMoves = [];
+
+    gameState;
 
     constructor() {
+        this.resetGame();
+    }
+
+    resetGame() {
         this.pieces = [];
+
+        this.movingPiece = null;
+        this.movingPieceMoves = null;
+
         this.isWhiteTurn = true;
+
         this.moves = [];
+        this.enemyAttacks = [];
+        this.currentPlayerMoves = [];
+
         this.initializePieces();
         this.enemyAttacks = this.getEnemyAttacks();
+
+        this.gameState = GAMESTATES.PLAYING;
     }
 
     initializePieces() {
@@ -36,32 +58,32 @@ export class Board {
 
         // Generate pieces
         const pieces = [];
-        // // Add dark pieces
-        // pieces.push(
-        //     new Rook(8, 1, false),
-        //     new Knight(8, 2, false),
-        //     new Bishop(8, 3, false),
-        //     new Queen(8, 4, false),
-        //     new King(8, 5, false),
-        //     new Bishop(8, 6, false),
-        //     new Knight(8, 7, false),
-        //     new Rook(8, 8, false),
-        // );
-        // addPawns(7, false); // Dark pawns
-        // // Add light pieces
-        // pieces.push(
-        //     new Rook(1, 1, true),
-        //     new Knight(1, 2, true),
-        //     new Bishop(1, 3, true),
-        //     new Queen(1, 4, true),
-        //     new King(1, 5, true),
-        //     new Bishop(1, 6, true),
-        //     new Knight(1, 7, true),
-        //     new Rook(1, 8, true),
-        // );
-        // addPawns(2, true); // Light pawns
+        // Add dark pieces
+        pieces.push(
+            new Rook(8, 1, false),
+            new Knight(8, 2, false),
+            new Bishop(8, 3, false),
+            new Queen(8, 4, false),
+            new King(8, 5, false),
+            new Bishop(8, 6, false),
+            new Knight(8, 7, false),
+            new Rook(8, 8, false),
+        );
+        addPawns(7, false); // Dark pawns
+        // Add light pieces
+        pieces.push(
+            new Rook(1, 1, true),
+            new Knight(1, 2, true),
+            new Bishop(1, 3, true),
+            new Queen(1, 4, true),
+            new King(1, 5, true),
+            new Bishop(1, 6, true),
+            new Knight(1, 7, true),
+            new Rook(1, 8, true),
+        );
+        addPawns(2, true); // Light pawns
 
-        pieces.push(new King(3, 5, false, false), new Pawn(7, 4, true, false), new King(6, 5, true, false), new Pawn(2, 4, false, false));
+        // pieces.push(new King(1, 1, true), new King(1, 3, false), new Bishop(6, 1, true), new Bishop(7, 7, false), new Rook(7, 1, true));
 
         // Set pieces
         this.pieces = pieces;
@@ -79,23 +101,23 @@ export class Board {
     setMovingPiece(piece) {
         if (piece) {
             this.movingPiece = piece;
-            this.possibleMoves = this.getMoves(piece);
+            this.movingPieceMoves = this.getMoves(piece);
         }
     }
 
     clearMovingPiece() {
         this.movingPiece = null;
-        this.possibleMoves = null;
+        this.movingPieceMoves = null;
     }
 
     resetMovingPiece() {
         this.movingPiece = null;
-        this.possibleMoves = null;
+        this.movingPieceMoves = null;
     }
 
     movePiece(piece, file, rank) {
         // Get possible move
-        const move = this.possibleMoves.find((move) => move.file === file && move.rank === rank);
+        const move = this.movingPieceMoves.find((move) => move.file === file && move.rank === rank);
         // Check if move was found
         if (move) {
             // Check if is new placement
@@ -171,13 +193,33 @@ export class Board {
     toggleTurn() {
         this.isWhiteTurn = !this.isWhiteTurn;
 
+        // Get all moves enemy player can play
         this.enemyAttacks = this.getEnemyAttacks();
 
-        // Look for checkmate (no moves to play)
-        if (this.isCheckMate()) {
-            // TODO: Show message and reset board?
-            console.log(`Checkmate, ${this.isWhiteTurn ? 'white' : 'black'}wins`);
+        // Get all moves current player can play
+        this.currentPlayerMoves = this.getCurrentPlayerAttacks();
+
+        // Look for draw
+        if (this.isDrawInsufficientPieces()) {
+            this.gameState = GAMESTATES.DRAW_INSUFFICIENT_PIECES;
+        } else if (this.isThreeFoldRepetition()) {
+            // TODO?
+            console.log(`Stalemate, the same move was played three times.`);
+        } else if (this.isCheckMate()) {
+            // Look for checkmate (no moves to play)
+            this.gameState = GAMESTATES.CHECKMATE;
+        } else if (this.isStaleMate()) {
+            // Look for stalemate
+            this.gameState = GAMESTATES.DRAW_STALEMATE;
         }
+    }
+
+    getCurrentPlayerAttacks() {
+        // Get current turn's pieces
+        const currentTurnPieces = this.getPiecesOfTeam(false);
+
+        // Calculate moves for each piece and return
+        return currentTurnPieces.map((piece) => this.getMoves(piece)).flat();
     }
 
     getEnemyAttacks() {
@@ -188,15 +230,53 @@ export class Board {
         return enemyPieces.map((piece) => this.getMoves(piece, true)).flat();
     }
 
+    isDrawInsufficientPieces() {
+        //Is draw if:
+        // * King vs. king
+        // * King and bishop vs. king
+        // * King and knight vs. king
+        // * King and bishop vs. king and bishop of the same color as the opponent's bishop
+        const onlyKings = this.pieces.length <= 2 && this.pieces.every((piece) => piece instanceof King);
+        const onlyBishopOrKnightKings =
+            this.pieces.length === 3 &&
+            this.pieces.filter((piece) => piece instanceof King).length === 2 &&
+            this.pieces.some((piece) => piece instanceof Knight || piece instanceof Bishop);
+        const onlyBishopsSameSquareColorKings =
+            this.pieces.length === 4 &&
+            this.pieces.filter((piece) => piece instanceof King).length === 2 &&
+            this.pieces
+                .filter((piece) => piece instanceof Bishop)
+                .reduce((prevPiece, currentPiece) => {
+                    if (prevPiece) {
+                        return (
+                            BoardUtils.isLightSquare(prevPiece.file, prevPiece.rank) ===
+                            BoardUtils.isLightSquare(currentPiece.file, currentPiece.rank)
+                        );
+                    } else {
+                        return currentPiece;
+                    }
+                });
+
+        return onlyKings || onlyBishopOrKnightKings || onlyBishopsSameSquareColorKings;
+    }
+
+    isThreeFoldRepetition() {
+        return false;
+    }
+
+    isStaleMate() {
+        return this.currentPlayerMoves.length === 0;
+    }
+
     isCheckMate() {
-        // Get all pieces for current turn
-        const pieces = this.pieces.filter((piece) => piece.isWhite === this.isWhiteTurn);
+        // Check if no moves can be made
+        if (!this.isStaleMate()) return false;
 
-        // Get all moves for all pieces
-        const moves = pieces.map((piece) => this.getMoves(piece)).flat();
+        // Get current player king
+        const king = this.pieces.find((piece) => piece.isWhite === this.isWhiteTurn && piece instanceof King);
 
-        // Check if no moves can be made and return
-        return moves.length === 0;
+        // Check if king is targeted and return
+        return this.pieceIsTargetedByMoves(king).length > 0;
     }
 
     getMoves(movingPiece, isEnemyMoves = false) {
@@ -239,20 +319,26 @@ export class Board {
             ...multiPieceMoves,
         ];
 
+        // Filter out moves not on board
+        MovesUtils.filterMovesNotOnBoard(joinedMoves);
+
         // Check if is king
         if (movingPiece instanceof King) {
-            // Get moves from enemy
-            const enemyMoves = this.enemyAttacks;
             // Remove moves on where enemy can attack
             MovesUtils.filterMovesInCommon(joinedMoves, this.enemyAttacks, false);
 
+            // Filter out moves of enemy king
+            const enemyKing = this.getPiecesOfTeam(!isEnemyMoves).find((piece) => piece instanceof King);
+            const enemyKingMoves = MovesUtils.flattenPieceMoves(enemyKing.getMoves());
+            MovesUtils.filterMovesInCommon(joinedMoves, enemyKingMoves, false);
+
             // Find move that attacks king
             const move = this.enemyAttacks.find((move) => move.file === movingPiece.file && move.rank === movingPiece.rank);
-            if (move?.enemyPiece) {
+            if (move?.piece) {
                 // Get move line (horizontal/vertical/diagonal) through king and enemy that is attacking king
                 const lineOfAttack = MovesUtils.generateMovesLineThroughPlacements(
-                    move.enemyPiece.file,
-                    move.enemyPiece.rank,
+                    move.piece.file,
+                    move.piece.rank,
                     movingPiece.file,
                     movingPiece.rank,
                 );
@@ -260,6 +346,7 @@ export class Board {
                 MovesUtils.filterMovesInCommon(joinedMoves, lineOfAttack, false);
             }
         } else if (!isEnemyMoves) {
+            // For all other pieces, if it is not an enemy move check
             /**
              * Block check
              */
@@ -309,9 +396,7 @@ export class Board {
         }
 
         // Add piece to moves is enemy moves & add piece placement
-        if (isEnemyMoves) {
-            joinedMoves.map((move) => (move.enemyPiece = movingPiece));
-        }
+        joinedMoves.map((move) => (move.piece = movingPiece));
 
         // Return moves
         return joinedMoves;
@@ -325,15 +410,12 @@ export class Board {
         const attacksPerEnemy = new Map();
         const enemies = [];
         enemyAttacks.forEach((move) => {
-            if (attacksPerEnemy.has(move.enemyPiece)) {
-                attacksPerEnemy.get(move.enemyPiece).push(move);
+            if (attacksPerEnemy.has(move.piece)) {
+                attacksPerEnemy.get(move.piece).push(move);
             } else {
-                enemies.push(move.enemyPiece);
+                enemies.push(move.piece);
                 // Add move + enemyPiece placement itself to map
-                attacksPerEnemy.set(move.enemyPiece, [
-                    move,
-                    { file: move.enemyPiece.file, rank: move.enemyPiece.rank, enemyPiece: move.enemyPiece },
-                ]);
+                attacksPerEnemy.set(move.piece, [move, { file: move.piece.file, rank: move.piece.rank, piece: move.piece }]);
             }
         });
 
