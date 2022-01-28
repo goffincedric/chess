@@ -2,12 +2,13 @@ import { SQUARE_SIZE, FILES, RANKS, BOARD_OFFSET } from '../constants/boardConst
 
 function positionToPlacement(x, y) {
     const rank = Math.floor((x - BOARD_OFFSET) / SQUARE_SIZE) + 1;
-    const file = FILES - Math.floor(Math.abs((y - BOARD_OFFSET) + 1) / SQUARE_SIZE);
+    const file = FILES - Math.floor(Math.abs(y - BOARD_OFFSET + 1) / SQUARE_SIZE);
     return {
         rank,
         file,
     };
 }
+
 function placementToPosition(file, rank) {
     const x = (rank - 1) * SQUARE_SIZE + BOARD_OFFSET;
     const y = (FILES - file) * SQUARE_SIZE + BOARD_OFFSET;
@@ -15,6 +16,15 @@ function placementToPosition(file, rank) {
         x,
         y,
     };
+}
+
+function rankCharToNumber(rankChar) {
+    const upperCaseRank = rankChar.toUpperCase();
+    return upperCaseRank.charCodeAt(0) - 64;
+}
+
+function rankNumberToChar(rankNumber) {
+    return String.fromCharCode(64 + rankNumber);
 }
 
 function isOnBoard(file, rank) {
@@ -28,6 +38,8 @@ function isLightSquare(file, rank) {
 export const BoardUtils = {
     positionToPlacement,
     placementToPosition,
+    rankCharToNumber,
+    rankNumberToChar,
     isOnBoard,
     isLightSquare,
 };

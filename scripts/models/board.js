@@ -5,10 +5,11 @@ import { MovesUtils } from '../utils/movesUtils.js';
 import { BoardUtils } from '../utils/boardUtils.js';
 import { Knight } from './pieces/knight.js';
 import { Bishop } from './pieces/bishop.js';
-import { Queen } from './pieces/queen.js';
 import { GAMESTATES } from '../constants/boardConstants.js';
+import { PieceUtils } from '../utils/pieceUtils.js';
 
 export class Board {
+    _pastPiecesCount;
     pieces;
 
     movingPiece;
@@ -17,76 +18,56 @@ export class Board {
     isWhiteTurn;
     pawnToPromote;
 
-    moves;
+    pastMoves;
 
     enemyAttacks = [];
     currentPlayerMoves = [];
 
     gameState;
 
-    constructor() {
-        this.resetGame();
+    // Variable that holds the amount of half moves made since last capture, for 50-move rule
+    // (1 full move === each player made a move, so 10 full moves = 50/51 half moves)
+    halfMovesCount = 0;
+
+    constructor(initialFENString) {
+        this.resetGame(initialFENString);
     }
 
-    resetGame() {
-        this.pieces = [];
-
-        this.movingPiece = null;
-        this.movingPieceMoves = null;
-
-        this.isWhiteTurn = true;
-
-        this.moves = [];
-        this.enemyAttacks = [];
-        this.currentPlayerMoves = [];
-
-        this.initializePieces();
+    resetGame(initialFENString = null) {
+        this.initializePieces(initialFENString);
+        this._pastPiecesCount = this.pieces.length;
+        this.currentPlayerMoves = this.getCurrentPlayerAttacks();
         this.enemyAttacks = this.getEnemyAttacks();
 
+        // Set game state to playing
         this.gameState = GAMESTATES.PLAYING;
     }
 
-    initializePieces() {
-        // TODO: Initialize with FEN notation
+    initializePieces(initialFENString) {
+        // Set standard board
+        this.movingPiece = null;
+        this.movingPieceMoves = null;
+        this.pawnToPromote = null;
+        this.enemyAttacks = [];
+        this.currentPlayerMoves = [];
 
-        // Generate pawns
-        function addPawns(file, isWhite) {
-            for (let rank = 1; rank <= 8; rank++) {
-                pieces.push(new Pawn(file, rank, isWhite));
+        if (initialFENString) {
+            // Initialize with FEN notation
+            const boardData = FENUtils.generateBoardFromFen(initialFENString);
+            this.pieces = boardData.pieces;
+            this.isWhiteTurn = boardData.isWhiteTurn;
+            this.halfMovesCount = boardData.halfMoveCount;
+            this.pastMoves = Array(boardData.fullMoveCount * 2).fill(null);
+            if (boardData.pastMove) {
+                this.pastMoves[this.pastMoves - 1] = boardData.pastMove;
             }
+        } else {
+            // Initialize standard board
+            this.pieces = [];
+            this.isWhiteTurn = true;
+            this.pastMoves = [];
+            this.pieces = PieceUtils.getStandardBoardSetup();
         }
-
-        // Generate pieces
-        const pieces = [];
-        // Add dark pieces
-        pieces.push(
-            new Rook(8, 1, false),
-            new Knight(8, 2, false),
-            new Bishop(8, 3, false),
-            new Queen(8, 4, false),
-            new King(8, 5, false),
-            new Bishop(8, 6, false),
-            new Knight(8, 7, false),
-            new Rook(8, 8, false),
-        );
-        addPawns(7, false); // Dark pawns
-        // Add light pieces
-        pieces.push(
-            new Rook(1, 1, true),
-            new Knight(1, 2, true),
-            new Bishop(1, 3, true),
-            new Queen(1, 4, true),
-            new King(1, 5, true),
-            new Bishop(1, 6, true),
-            new Knight(1, 7, true),
-            new Rook(1, 8, true),
-        );
-        addPawns(2, true); // Light pawns
-
-        // pieces.push(new King(1, 1, true), new King(1, 3, false), new Bishop(6, 1, true), new Bishop(7, 7, false), new Rook(7, 1, true));
-
-        // Set pieces
-        this.pieces = pieces;
     }
 
     getPieceByPosition(x, y) {
@@ -154,7 +135,7 @@ export class Board {
                     this.pawnToPromote = piece;
                 } else {
                     // Add move to moves
-                    this.moves.push(move);
+                    this.pastMoves.push(move);
 
                     // Set next turn
                     this.toggleTurn();
@@ -192,6 +173,12 @@ export class Board {
 
     toggleTurn() {
         this.isWhiteTurn = !this.isWhiteTurn;
+        if (this._pastPiecesCount !== this.pieces.length || this.pastMoves[this.pastMoves.length - 1].piece instanceof Pawn) {
+            this._pastPiecesCount = this.pieces.length;
+            this.halfMovesCount = 0;
+        } else {
+            this.halfMovesCount++;
+        }
 
         // Get all moves enemy player can play
         this.enemyAttacks = this.getEnemyAttacks();
@@ -471,11 +458,11 @@ export class Board {
                         (piece) =>
                             piece.isWhite !== movingPiece.isWhite &&
                             piece instanceof Pawn &&
-                            this.moves.length > 1 &&
+                            this.pastMoves.length > 0 &&
                             // Check if last move was the first move made by the piece
-                            this.moves[this.moves.length - 1].isFirstMove &&
+                            this.pastMoves[this.pastMoves.length - 1]?.isFirstMove &&
                             // Check if the last move was made by the piece current piece in loop
-                            this.moves[this.moves.length - 1].piece === piece &&
+                            this.pastMoves[this.pastMoves.length - 1]?.piece === piece &&
                             piece.file === move.file &&
                             piece.rank === move.rank,
                     ),

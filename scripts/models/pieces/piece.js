@@ -15,7 +15,7 @@ export class Piece {
         this.file = file;
         this.rank = rank;
         this.isWhite = isWhite;
-        this.fenName = fenName;
+        this.fenName = isWhite ? fenName.toUpperCase() : fenName.toLowerCase();
         this.isSlidingPiece = isSlidingPiece;
 
         this.isFirstMove = isFirstMove;

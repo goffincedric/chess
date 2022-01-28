@@ -21,6 +21,7 @@ import { Queen } from './models/pieces/queen.js';
 import { AssetUtils } from './utils/assetUtils.js';
 import { Pawn } from './models/pieces/pawn.js';
 import { King } from './models/pieces/king.js';
+import { FENUtils } from './utils/fenUtils.js';
 
 // Initialize board
 let chessBoard = new Board();
@@ -474,16 +475,18 @@ window.draw = draw;
 window.mouseReleased = mouseReleased;
 window.mousePressed = mousePressed;
 window.chessBoard = chessBoard;
+window.FENUtils = FENUtils;
 
 /**
  * TODO:
+ *  * Fix KING MOVES!! (can't capture pieces, can't stand straight ahead of pawn or block pawn two-spaces move, ...) (onderscheid maken tussen attack & move in move object)
  *  * Pick starting color
  *  * Show captured pieces
  *  * Add current color's turn on right side of canvas
- *  * Add FEN notation support (board initialization & moves)
+ *  * Add FEN notation support: moves
  *  * Add resignation button
  *  * Add threefold move repetition check
- *  * Add button to export moves (initial board setup + each consequent move)
+ *  * Add button to export moves (initial board setup + each consequent move) to pgn file (see chess.com pgn file)
  *  * Integrate in discord bot
  *  * Add AI
  */
