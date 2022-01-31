@@ -71,11 +71,7 @@ export class Board {
 
     getPieceByPosition(x, y) {
         const position = BoardUtils.positionToPlacement(x, y);
-        return this.getPieceByPlacement(position.file, position.rank);
-    }
-
-    getPieceByPlacement(file, rank) {
-        return this.pieces.find((piece) => piece.file === file && piece.rank === rank);
+        return PieceUtils.getPieceByPlacement(this.pieces, position.file, position.rank);
     }
 
     setMovingPiece(piece) {
@@ -383,7 +379,7 @@ export class Board {
                         if (PlacementUtils.hasPlacementsInCommon(movesBetween, movesAvailable)) {
                             // Get piece on each move placement and filter out empty placements
                             const piecesOnMoves = movesBetween
-                                .map((move) => this.getPieceByPlacement(move.file, move.rank))
+                                .map((move) => PieceUtils.getPieceByPlacement(this.pieces, move.file, move.rank))
                                 .filter((piece) => !!piece);
                             // Check if movingPiece is the only piece between enemy
                             if (piecesOnMoves.length === 1 && piecesOnMoves.includes(movingPiece)) {

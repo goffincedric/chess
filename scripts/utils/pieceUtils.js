@@ -1,12 +1,11 @@
-import { Pawn } from '../models/pieces/pawn.js';
-import { Rook } from '../models/pieces/rook.js';
-import { Knight } from '../models/pieces/knight.js';
-import { Bishop } from '../models/pieces/bishop.js';
-import { Queen } from '../models/pieces/queen.js';
-import { King } from '../models/pieces/king.js';
+import { Bishop, King, Knight, Pawn, Queen, Rook } from '../models/pieces';
 
 function getPiecesFromTeam(pieces, pieceType, isWhite) {
     return pieces.filter((piece) => piece.TYPE === pieceType && piece.isWhite === isWhite);
+}
+
+function getPieceByPlacement(pieces, file, rank) {
+    return pieces.find((piece) => piece.file === file && piece.rank === rank);
 }
 
 function getStandardBoardSetup() {
@@ -49,5 +48,6 @@ function getStandardBoardSetup() {
 
 export const PieceUtils = {
     getPiecesFromTeam,
-    getStandardBoardSetup
+    getPieceByPlacement,
+    getStandardBoardSetup,
 };
