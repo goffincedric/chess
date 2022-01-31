@@ -1,260 +1,14 @@
 import { BoardUtils } from './boardUtils.js';
-import { FILES, RANKS } from '../constants/boardConstants.js';
 
-function generateHorizontalMoves(currentFile, currentRank, limit, includeCurrentPlacement = false) {
-    let horizontals = [];
-    let count, rankOffset, rank, moves;
-    for (let i = 0; i < 2; i++) {
-        // Reset rank and moves
-        rank = null;
-        moves = [];
+// Can only add defendedPieces if keepSamePieceMoves is set to true
+function truncateMoveDirections(moveDirections, pieces, keepSamePieceMoves = false, addAttackedPiece = true, addDefendedPiece = true) {
+    // Check if is 2D array
+    if (!Array.isArray(moveDirections) || !(Array.isArray(moveDirections[0]) && moveDirections[0].length > 0)) return;
 
-        // Calculate rank offset
-        rankOffset = i % 2 ? -1 : 1;
+    // Get moving piece
+    const movingPiece = moveDirections[0][0]?.movingPiece;
+    if (!movingPiece) return;
 
-        // Generate moves until not on board anymore
-        count = includeCurrentPlacement ? -1 : 0;
-        do {
-            // Add previous placement to moves
-            if (rank) moves.push({ file: currentFile, rank });
-
-            // Calculate new placement
-            count++;
-            rank = currentRank + count * rankOffset;
-        } while (BoardUtils.isOnBoard(currentFile, rank) && (!limit || count <= limit));
-        // Check for moves to add
-        if (moves.length) horizontals.push(moves);
-    }
-
-    return horizontals;
-}
-
-function generateVerticalMoves(currentFile, currentRank, limit, includeCurrentPlacement = false) {
-    let verticals = [];
-    let count, fileOffset, file, moves;
-    for (let i = 0; i < 2; i++) {
-        // Reset file and moves
-        file = null;
-        moves = [];
-
-        // Calculate file offset
-        fileOffset = i % 2 ? -1 : 1;
-
-        // Generate moves until not on board anymore
-        count = includeCurrentPlacement ? -1 : 0;
-        do {
-            // Add previous placement to moves
-            if (file) moves.push({ file, rank: currentRank });
-
-            // Calculate new placement
-            count++;
-            file = currentFile + count * fileOffset;
-        } while (BoardUtils.isOnBoard(file, currentRank) && (!limit || count <= limit));
-        // Check for moves to add
-        if (moves.length) verticals.push(moves);
-    }
-
-    return verticals;
-}
-
-function generateDiagonalMoves(currentFile, currentRank, limit, includeCurrentPlacement = false) {
-    let diagonals = [];
-    let count, fileOffset, rankOffset, file, rank, moves;
-    for (let i = 0; i < 4; i++) {
-        // Reset file, rank and moves
-        file = null;
-        rank = null;
-        moves = [];
-
-        // Calculate offsets
-        fileOffset = i % 2 ? -1 : 1;
-        rankOffset = i >= 2 ? -1 : 1;
-
-        // Generate moves until not on board anymore
-        count = includeCurrentPlacement ? -1 : 0;
-        do {
-            // Add previous placement to moves
-            if (file && rank) moves.push({ file, rank });
-
-            // Calculate new placement
-            count++;
-            file = currentFile + count * fileOffset;
-            rank = currentRank + count * rankOffset;
-        } while (BoardUtils.isOnBoard(file, rank) && (!limit || count <= limit));
-        // Check for moves to add
-        if (moves.length) diagonals.push(moves);
-    }
-
-    return diagonals;
-}
-
-function generateHorizontalMovesBetween(currentFile, rank1, rank2, includePlacement1, includePlacement2) {
-    // Calculate smallest rank, largest rank and limit
-    const minRank = Math.min(rank1, rank2);
-    const maxRank = Math.max(rank1, rank2);
-    const limit = maxRank - minRank;
-
-    // Check if placements are the same and at least 1 placement is included
-    if (limit === 0 && (includePlacement1 || includePlacement2)) return [{ file: currentFile, rank: rank1 }];
-
-    // Generate spaces for each horizontal direction, starting from rank1
-    const horizontalDirections = generateHorizontalMoves(currentFile, rank1, limit, includePlacement1);
-
-    // Get direction pointing to rank2
-    const horizontalSpaces = horizontalDirections.find((directionSpaces) => directionSpaces.some((space) => space.rank === rank2));
-
-    // Check if placement with rank2 needs to be included
-    if (!includePlacement2) horizontalSpaces.pop();
-
-    // Return generates spaces
-    return horizontalSpaces ?? [];
-}
-
-function generateVerticalMovesBetween(currentRank, file1, file2, includePlacement1, includePlacement2) {
-    // Calculate smallest file, largest file and limit
-    const minFile = Math.min(file1, file2);
-    const maxFile = Math.max(file1, file2);
-    const limit = maxFile - minFile;
-
-    // Check if placements are the same and at least 1 placement is included
-    if (limit === 0 && (includePlacement1 || includePlacement2)) return [{ file: file1, rank: currentRank }];
-
-    // Generate spaces for each vertical direction, starting from file1
-    const verticalDirections = generateVerticalMoves(file1, currentRank, limit, includePlacement1);
-
-    // Get direction pointing to file2
-    const verticalSpaces = verticalDirections.find((directionSpaces) => directionSpaces.some((space) => space.file === file2));
-
-    // Check if placement with file2 needs to be included
-    if (!includePlacement2) verticalSpaces?.pop();
-
-    // Return generates spaces
-    return verticalSpaces ?? [];
-}
-
-function generateDiagonalMovesBetween(file1, rank1, file2, rank2, includePlacement1, includePlacement2) {
-    // Calculate smallest file and rank, largest file and rank and difference between ranks and files
-    const minFile = Math.min(file1, file2);
-    const maxFile = Math.max(file1, file2);
-    const minRank = Math.min(rank1, rank2);
-    const maxRank = Math.max(rank1, rank2);
-    const dFile = maxFile - minFile;
-    const dRank = maxRank - minRank;
-
-    // Check if difference between ranks and files is not the same (rectangle, therefore not a straight diagonal)
-    if (dFile !== dRank) return [];
-
-    // Check if placements are the same and at least 1 placement is included
-    if (dFile === 0 && (includePlacement1 || includePlacement2)) return [{ file: file1, rank: rank1 }];
-
-    // Generate spaces for each diagonal direction, starting from file1 and rank1
-    const diagonalDirections = generateDiagonalMoves(file1, rank1, dFile, includePlacement1);
-
-    // Get direction pointing to file2 and rank 2
-    const diagonalSpaces = diagonalDirections.find((directionSpaces) =>
-        directionSpaces.some((space) => space.file === file2 && space.rank === rank2),
-    );
-
-    // Check if placement with file2 and rank2 needs to be included
-    if (!includePlacement2) diagonalSpaces?.pop();
-
-    // Return generates spaces
-    return diagonalSpaces ?? [];
-}
-
-function generateMovesBetweenPlacements(file1, rank1, file2, rank2, includePlacement1, includePlacement2) {
-    // Calculate smallest file and rank, largest file and rank and difference between ranks and files
-    const minFile = Math.min(file1, file2);
-    const maxFile = Math.max(file1, file2);
-    const minRank = Math.min(rank1, rank2);
-    const maxRank = Math.max(rank1, rank2);
-    const dFile = maxFile - minFile;
-    const dRank = maxRank - minRank;
-
-    // Check if is horizontal move
-    if (dFile === 0 && dRank > 0) {
-        return generateHorizontalMovesBetween(file1, rank1, rank2, includePlacement1, includePlacement2);
-    } else if (dFile > 0 && dRank === 0) {
-        // Check if is vertical move
-        return generateVerticalMovesBetween(rank1, file1, file2, includePlacement1, includePlacement2);
-    } else {
-        return generateDiagonalMovesBetween(file1, rank1, file2, rank2, includePlacement1, includePlacement2);
-    }
-}
-
-function generateMovesLineThroughPlacements(file1, rank1, file2, rank2) {
-    // Calculate smallest file and rank, largest file and rank and difference between ranks and files
-    const minFile = Math.min(file1, file2);
-    const maxFile = Math.max(file1, file2);
-    const minRank = Math.min(rank1, rank2);
-    const maxRank = Math.max(rank1, rank2);
-    const dFile = maxFile - minFile;
-    const dRank = maxRank - minRank;
-
-    // Line
-    let lineMoves = [];
-
-    // Check if is horizontal move
-    if (dFile === 0 && dRank > 0) {
-        lineMoves = generateHorizontalMoves(file1, 1, RANKS, true).flat();
-    } else if (dFile > 0 && dRank === 0) {
-        // Check if is vertical move
-        lineMoves = generateVerticalMoves(1, rank1, FILES, true).flat();
-    } else if (dFile === dRank) {
-        // Check if placement is the same
-        if (file1 === file2 && rank1 === rank2) {
-            return [];
-        }
-        // Get generate diagonals from move with smallest file
-        let smallestFileMove, largestFileMove;
-        if (file1 < file2) {
-            smallestFileMove = { file: file1, rank: rank1 };
-            largestFileMove = { file: file2, rank: rank2 };
-        } else {
-            smallestFileMove = { file: file2, rank: rank2 };
-            largestFileMove = { file: file1, rank: rank1 };
-        }
-        let diagonals = generateDiagonalMoves(smallestFileMove.file, smallestFileMove.rank, FILES, false);
-
-        // Get first diagonal which contains the largest move
-        let firstDiagonal = diagonals.find((diagonal) =>
-            diagonal.some((placement) => placement.file === largestFileMove.file && placement.rank === largestFileMove.rank),
-        );
-        firstDiagonal.unshift(smallestFileMove);
-
-        // Get placement opposite of largest placement in firstDiagonal
-        let moveToFind;
-        if (smallestFileMove.rank < largestFileMove.rank) {
-            // Case for diagonal: /
-            const largestMove = firstDiagonal.find((move) => move.file === 8 || move.rank === 8);
-            if (largestMove.file === 8) {
-                moveToFind = { file: FILES - largestMove.rank + 1, rank: 1 };
-            } else {
-                moveToFind = { file: 1, rank: RANKS - largestMove.file + 1 };
-            }
-        } else {
-            // Case for diagonal: \
-            const largestMove = firstDiagonal.find((move) => move.file === 8 || move.rank === 1);
-            moveToFind = { file: largestMove.rank, rank: largestMove.file };
-        }
-
-        // Get secondDiagonal
-        let secondDiagonal = diagonals.find((diagonal) =>
-            diagonal.some((placement) => placement.file === moveToFind.file && placement.rank === moveToFind.rank),
-        );
-
-        // Merge diagonals
-        lineMoves = [...secondDiagonal, ...firstDiagonal];
-    }
-
-    // Filter out duplicate moves in line
-    removeDuplicateMoves(lineMoves);
-
-    // Return moves in line
-    return lineMoves;
-}
-
-function truncateMoveDirections(moveDirections, pieces, movingPiece, keepSamePieceMoves = false) {
     // Loop over directions
     let foundPiece, count;
     moveDirections.forEach((moves) => {
@@ -277,10 +31,20 @@ function truncateMoveDirections(moveDirections, pieces, movingPiece, keepSamePie
                 count--;
             }
             moves.splice(count);
+
+            // Check if attacked piece should be added
+            if (moves.length > 0 && addAttackedPiece && foundPiece.isWhite !== movingPiece.isWhite) {
+                moves[moves.length - 1].attackedPiece = foundPiece;
+            }
+            // Check if defended piece should be added
+            if (keepSamePieceMoves && moves.length > 0 && addDefendedPiece && foundPiece.isWhite === movingPiece.isWhite) {
+                moves[moves.length - 1].defendedPiece = foundPiece;
+            }
         }
     });
 }
 
+// Remove moves that directly attack enemies
 function removeMovesWithEnemies(moves, pieces, movingPiece) {
     const moveIndicesWithEnemies = [];
     // Look for moves where a piece of a different color is present
@@ -296,7 +60,8 @@ function removeMovesWithEnemies(moves, pieces, movingPiece) {
     moveIndicesWithEnemies.forEach((index) => moves.splice(index, 1));
 }
 
-function filterMovesNotOnBoard(moves) {
+// Remove moves that are not on the chessboard
+function removeMovesNotOnBoard(moves) {
     const moveIndicesToRemove = [];
     // Look for moves to that are not on board
     moves.forEach((move, index) => {
@@ -310,6 +75,7 @@ function filterMovesNotOnBoard(moves) {
     moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
 }
 
+// Keep moves that attack pieces of the same color
 function filterSamePieceMoves(moves, pieces, movingPiece) {
     const moveIndicesToRemove = [];
     // Look for moves to remove where a piece of the same color is present
@@ -325,6 +91,7 @@ function filterSamePieceMoves(moves, pieces, movingPiece) {
     moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
 }
 
+// Keep moves that attack pieces of a different color
 function filterEnemyPieceMoves(moves, pieces, movingPiece) {
     const moveIndicesToRemove = [];
     // Look for moves to remove where a piece of a different color is present
@@ -340,63 +107,29 @@ function filterEnemyPieceMoves(moves, pieces, movingPiece) {
     moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
 }
 
-// Remove moves that have duplicate placements
-function removeDuplicateMoves(moves) {
-    const moveIndicesToRemove = [];
-    moves.reduce((visitedMoves, move, index) => {
-        if (visitedMoves.some((visitedMove) => visitedMove.file === move.file && visitedMove.rank === move.rank)) {
-            moveIndicesToRemove.push(index);
-        } else {
-            visitedMoves.push(move);
-        }
-        return visitedMoves;
-    }, []);
-
-    // Remove moves from back to front
-    moveIndicesToRemove.reverse();
-    moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
+// Flatten a 2D array
+function flattenPieceMoves(moves) {
+    return Object.values(moves)
+        .flat(2)
+        .filter((move) => move);
 }
 
-// Filter moves that attack pieces of the same color
-function filterMovesInCommon(moves, movesToCheck, keepMoves) {
-    const moveIndicesToRemove = [];
-    moves.forEach((move, index) => {
-        const containsDuplicate = movesToCheck.some((moveToCheck) => moveToCheck.file === move.file && moveToCheck.rank === move.rank);
-        // ^ is XOR, simplified: !keepMoves && containsDuplicate || keepMoves && !containsDuplicate
-        if (keepMoves ^ containsDuplicate) {
-            moveIndicesToRemove.push(index);
+// Add attackedPiece and defendedPiece properties to moves
+function addAttackedDefendedPiecesToMoves(moves, pieces) {
+    moves.forEach((move) => {
+        const foundPiece = pieces.find((piece) => piece.file === move.file && piece.rank === move.rank);
+        if (foundPiece && foundPiece.isWhite !== move.movingPiece.isWhite) {
+            move.attackedPiece = foundPiece;
         }
     });
-
-    // Remove moves from back to front
-    moveIndicesToRemove.reverse();
-    moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
-}
-
-function hasMovesInCommon(moves, movesToCheck) {
-    return moves.some((move) => movesToCheck.some((moveToCheck) => moveToCheck.file === move.file && moveToCheck.rank === move.rank));
-}
-
-function flattenPieceMoves(moves) {
-    return Object.values(moves).flat(2).filter(move => move)
 }
 
 export const MovesUtils = {
-    generateHorizontalMoves,
-    generateVerticalMoves,
-    generateDiagonalMoves,
-    generateHorizontalMovesBetween,
-    generateVerticalMovesBetween,
-    generateDiagonalMovesBetween,
-    generateMovesBetweenPlacements,
-    generateMovesLineThroughPlacements,
     truncateMoveDirections,
     removeMovesWithEnemies,
-    filterMovesNotOnBoard,
+    removeMovesNotOnBoard,
     filterSamePieceMoves,
     filterEnemyPieceMoves,
-    removeDuplicateMoves,
-    filterMovesInCommon,
-    hasMovesInCommon,
     flattenPieceMoves,
+    addAttackedDefendedPiecesToMoves,
 };

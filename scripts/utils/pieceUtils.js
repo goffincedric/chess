@@ -5,8 +5,8 @@ import { Bishop } from '../models/pieces/bishop.js';
 import { Queen } from '../models/pieces/queen.js';
 import { King } from '../models/pieces/king.js';
 
-function getPiecesFromTeam(pieces, PieceClass, isWhite) {
-    return pieces.filter((piece) => piece instanceof PieceClass && piece.isWhite === isWhite);
+function getPiecesFromTeam(pieces, pieceType, isWhite) {
+    return pieces.filter((piece) => piece.TYPE === pieceType && piece.isWhite === isWhite);
 }
 
 function getStandardBoardSetup() {

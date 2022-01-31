@@ -1,17 +1,23 @@
 import { Piece } from './piece.js';
 import { BoardUtils } from '../../utils/boardUtils.js';
+import { Placement } from '../placement.js';
+import { Move } from '../move.js';
+import { PieceTypes } from '../../constants/pieceConstants.js';
 
 export class Knight extends Piece {
+
+    TYPE = PieceTypes.KNIGHT;
+
     constructor(file, rank, isWhite, isFirstMove = true) {
         super(file, rank, isWhite, 'n', false, isFirstMove);
     }
 
     getMoves() {
-        // Generate bishop moves
-        let newMoves = [];
+        // Generate knight placements
+        let placements = [];
         let rank, fileOffset, rankOffset, placement;
 
-        // Distinguish moves that move the rook 1 file + 2 ranks or 2 files + 1 rank
+        // Distinguish placements that move the rook 1 file + 2 ranks or 2 files + 1 rank
         for (let file = 1; file <= 2; file++) {
             // Distinguish between upwards or downwards file directions
             for (let fileDirection = 0; fileDirection < 2; fileDirection++) {
@@ -23,20 +29,23 @@ export class Knight extends Piece {
                     rankOffset = rankDirection % 2 === 0 ? 1 : -1;
 
                     // Create placement and add if is on board
-                    placement = { file: this.file + file * fileOffset, rank: this.rank + rank * rankOffset };
+                    placement = new Placement(this.file + file * fileOffset, this.rank + rank * rankOffset);
                     if (BoardUtils.isOnBoard(placement.file, placement.rank)) {
-                        newMoves.push(placement);
+                        placements.push(placement);
                     }
                 }
             }
         }
+
+        // Convert placements to moves
+        const moves = placements.map((placement) => new Move(placement.file, placement.rank, this));
 
         // Return per category
         return {
             horizontal: null,
             vertical: null,
             diagonal: null,
-            nonSlidingMoves: newMoves,
+            nonSlidingMoves: moves,
         };
     }
 }

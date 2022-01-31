@@ -1,14 +1,24 @@
 import { Piece } from './piece.js';
-import { MovesUtils } from '../../utils/movesUtils.js';
+import { PlacementUtils } from '../../utils/placementUtils.js';
+import { Move } from '../move.js';
+import { PieceTypes } from '../../constants/pieceConstants.js';
 
 export class Rook extends Piece {
+
+    TYPE = PieceTypes.ROOK;
+
     constructor(file, rank, isWhite, isFirstMove = true) {
         super(file, rank, isWhite, 'r', true, isFirstMove);
     }
 
     getMoves() {
-        const horizontalMoves = MovesUtils.generateHorizontalMoves(this.file, this.rank);
-        const verticalMoves = MovesUtils.generateVerticalMoves(this.file, this.rank);
+        // Generate placements
+        const horizontalPlacements = PlacementUtils.generateHorizontalPlacements(this.file, this.rank);
+        const verticalPlacements = PlacementUtils.generateVerticalPlacements(this.file, this.rank);
+
+        // Convert to moves
+        const horizontalMoves = horizontalPlacements.map(direction => direction.map(placement => new Move(placement.file, placement.rank, this)));
+        const verticalMoves = verticalPlacements.map(direction => direction.map(placement => new Move(placement.file, placement.rank, this)));
 
         return {
             horizontal: horizontalMoves,

@@ -1,7 +1,12 @@
 import { Piece } from './piece.js';
+import { Placement } from '../placement.js';
+import { Move } from '../move.js';
+import { PieceTypes } from '../../constants/pieceConstants.js';
 
 export class Pawn extends Piece {
     promotionFile;
+
+    TYPE = PieceTypes.PAWN;
 
     constructor(file, rank, isWhite, isFirstMove = true) {
         super(file, rank, isWhite, 'p', true, isFirstMove);
@@ -12,15 +17,16 @@ export class Pawn extends Piece {
         // Check directionality & limit
         const offset = this.isWhite ? 1 : -1;
 
-        // Generate vertical moves
-        const verticalMoves = [];
-        verticalMoves.push({ file: this.file + 1 * offset, rank: this.rank });
+        // Generate vertical placements
+        const verticalPlacements = [new Placement(this.file + 1 * offset, this.rank)];
         if (this.isFirstMove) {
-            verticalMoves.push({ file: this.file + 2 * offset, rank: this.rank });
+            verticalPlacements.push(new Placement(this.file + 2 * offset, this.rank));
         }
+        // Convert placements to moves
+        const verticalMoves = verticalPlacements.map((placement) => new Move(placement.file, placement.rank, this));
 
-        // Pawn capture
-        const diagonalMoves = this.getAttackingSpaces().map((move) => [move]);
+        // Pawn capture moves
+        const diagonalMoves = this.getAttackingSpaces().map((placement) => [new Move(placement.file, placement.rank, this)]);
 
         // Return categorised moves
         return {
@@ -36,17 +42,11 @@ export class Pawn extends Piece {
         const offset = this.isWhite ? 1 : -1;
 
         // Get attacking spaces and return
-        return [
-            { file: this.file + 1 * offset, rank: this.rank + 1 },
-            { file: this.file + 1 * offset, rank: this.rank - 1 },
-        ];
+        return [new Placement(this.file + 1 * offset, this.rank + 1), new Placement(this.file + 1 * offset, this.rank - 1)];
     }
 
     getEnPassantSpaces() {
-        // Get attacking spaces and return
-        return [
-            { file: this.file, rank: this.rank + 1 },
-            { file: this.file, rank: this.rank - 1 },
-        ];
+        // Get spaces to check for en passant pieces and return
+        return [new Placement(this.file, this.rank + 1), new Placement(this.file, this.rank - 1)];
     }
 }

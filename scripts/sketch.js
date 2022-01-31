@@ -101,7 +101,7 @@ function draw() {
     drawBoard();
 
     // Draw enemy moves
-    // drawEnemyMoves();
+    drawEnemyMoves();
 
     // Draw possible moves
     drawMoves();
@@ -423,6 +423,14 @@ function mousePressed() {
     }
 }
 
+function movePiece() {
+    // Check if position has piece
+    const piece = chessBoard.getPieceByPosition(mouseX, mouseY);
+    if (piece && piece.isWhite === chessBoard.isWhiteTurn) {
+        chessBoard.setMovingPiece(piece);
+    }
+}
+
 // Mouse released listener
 function mouseReleased() {
     // Reset moving piece if is released outside board position
@@ -436,7 +444,7 @@ function mouseReleased() {
     // Get placement on board
     const newPlacement = BoardUtils.positionToPlacement(mouseX, mouseY);
     // Set piece to new placement
-    chessBoard.movePiece(chessBoard.movingPiece, newPlacement.file, newPlacement.rank);
+    chessBoard.movePiece(chessBoard.movingPiece, newPlacement);
 }
 
 function choosePromotionPiece() {
@@ -460,14 +468,6 @@ function choosePromotionPiece() {
     }
 }
 
-function movePiece() {
-    // Check if position has piece
-    const piece = chessBoard.getPieceByPosition(mouseX, mouseY);
-    if (piece && piece.isWhite === chessBoard.isWhiteTurn) {
-        chessBoard.setMovingPiece(piece);
-    }
-}
-
 // Set global functions and export chessBoard
 window.preload = preload;
 window.setup = setup;
@@ -479,7 +479,6 @@ window.FENUtils = FENUtils;
 
 /**
  * TODO:
- *  * Fix KING MOVES!! (can't capture pieces, can't stand straight ahead of pawn or block pawn two-spaces move, ...) (onderscheid maken tussen attack & move in move object)
  *  * Pick starting color
  *  * Show captured pieces
  *  * Add current color's turn on right side of canvas

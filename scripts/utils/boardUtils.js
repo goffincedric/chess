@@ -1,12 +1,10 @@
 import { SQUARE_SIZE, FILES, RANKS, BOARD_OFFSET } from '../constants/boardConstants.js';
+import { Placement } from '../models/placement.js';
 
 function positionToPlacement(x, y) {
     const rank = Math.floor((x - BOARD_OFFSET) / SQUARE_SIZE) + 1;
     const file = FILES - Math.floor(Math.abs(y - BOARD_OFFSET + 1) / SQUARE_SIZE);
-    return {
-        rank,
-        file,
-    };
+    return new Placement(file, rank);
 }
 
 function placementToPosition(file, rank) {

@@ -7,6 +7,8 @@ import { Pawn } from '../models/pieces/pawn.js';
 import { Knight } from '../models/pieces/knight.js';
 import { Bishop } from '../models/pieces/bishop.js';
 import { Queen } from '../models/pieces/queen.js';
+import { Move } from '../models/move.js';
+import { PieceTypes } from '../constants/pieceConstants.js';
 
 const FENStringRegex =
     /^(?<piecePlacement>([pnbrqkPNBRQK1-8]{1,8}\/?){8})\s+(?<sideToMove>[bw])\s+(?<castling>-|K?Q?k?q)\s+(?<enPassant>-|[a-h][3-6])\s+(?<halfMoveCount>\d+)\s+(?<fullMoveCount>\d+)\s*$/;
@@ -66,11 +68,11 @@ function generateFenFromBoard(pieces, isWhiteTurn, halfMoveCount, currentPlayerM
         }
     }
     fenString += ' ';
-    const whiteRooks = PieceUtils.getPiecesFromTeam(pieces, Rook, true).sort((a, b) => b.rank - a.rank);
-    const whiteKing = PieceUtils.getPiecesFromTeam(pieces, King, true).shift();
+    const whiteRooks = PieceUtils.getPiecesFromTeam(pieces, PieceTypes.ROOK, true).sort((a, b) => b.rank - a.rank);
+    const whiteKing = PieceUtils.getPiecesFromTeam(pieces, PieceTypes.KING, true).shift();
     whiteRooks.forEach((rook) => addCastlingPossibility(rook, whiteKing));
-    const darkRooks = PieceUtils.getPiecesFromTeam(pieces, Rook, false).sort((a, b) => b.rank - a.rank);
-    const darkKing = PieceUtils.getPiecesFromTeam(pieces, King, false).shift();
+    const darkRooks = PieceUtils.getPiecesFromTeam(pieces, PieceTypes.ROOK, false).sort((a, b) => b.rank - a.rank);
+    const darkKing = PieceUtils.getPiecesFromTeam(pieces, PieceTypes.KING, false).shift();
     darkRooks.forEach((rook) => addCastlingPossibility(rook, darkKing));
 
     // Add en passant availability
@@ -151,23 +153,18 @@ function generateBoardFromFen(fenString) {
                 // Create piece
                 let piece = new PieceClass(currentFile, currentRank, isWhite, true);
                 // Check current placement has a pawn and an en passant move needs to be generated
-                if (piece instanceof Pawn) {
+                if (piece.TYPE === PieceTypes.PAWN) {
                     // Check if is pawn first move
                     let firstMoveFile = (piece.isWhite) ? 2 : 7;
                     piece.isFirstMove = piece.file === firstMoveFile;
                     if (!enPassantMove && enPassantRank === currentRank && currentFile) {
                         let fileToCheck = currentFile + (isWhite ? -1 : 1);
                         if (fileToCheck === enPassantFile) {
+                            enPassantMove = new Move(enPassantFile, enPassantRank, piece);
                             piece.isFirstMove = false;
-                            enPassantMove = {
-                                isFirstMove: true,
-                                file: enPassantFile,
-                                rank: enPassantRank,
-                                piece,
-                            };
                         }
                     }
-                } else if (piece instanceof Rook) {
+                } else if (piece.TYPE === PieceTypes.ROOK) {
                     // Check if is queen side rook
                     if (piece.rank === 1) {
                         piece.isFirstMove = (piece.isWhite) ? canWhiteCastleQueenSide : canDarkCastleQueenSide;

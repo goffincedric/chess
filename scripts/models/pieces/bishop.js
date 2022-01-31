@@ -1,16 +1,27 @@
 import { Piece } from './piece.js';
-import { MovesUtils } from '../../utils/movesUtils.js';
+import { PlacementUtils } from '../../utils/placementUtils.js';
+import { Move } from '../move.js';
+import { PieceTypes } from '../../constants/pieceConstants.js';
 
 export class Bishop extends Piece {
+
+    TYPE = PieceTypes.BISHOP;
+
     constructor(file, rank, isWhite, isFirstMove = true) {
         super(file, rank, isWhite, 'b', true, isFirstMove);
     }
 
     getMoves() {
+        // Generate placements
+        const diagonalDirections = PlacementUtils.generateDiagonalPlacements(this.file, this.rank);
+
+        // Convert to moves
+        const diagonalMoves = diagonalDirections.map(diagonalDirection => diagonalDirection.map(placement => new Move(placement.file, placement.rank, this)));
+
         return {
             horizontal: null,
             vertical: null,
-            diagonal: MovesUtils.generateDiagonalMoves(this.file, this.rank),
+            diagonal: diagonalMoves,
             nonSlidingMoves: null,
         };
     }

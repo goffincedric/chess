@@ -1,17 +1,28 @@
 import { Piece } from './piece.js';
-import { MovesUtils } from '../../utils/movesUtils.js';
+import { PlacementUtils } from '../../utils/placementUtils.js';
+import { Move } from '../move.js';
+import { PieceTypes } from '../../constants/pieceConstants.js';
 
 export class King extends Piece {
+
+    TYPE = PieceTypes.KING;
+
     constructor(file, rank, isWhite, isFirstMove = true) {
         super(file, rank, isWhite, 'k', true, isFirstMove);
     }
 
     getMoves() {
-        // Generate moves
-        let horizontalMoves = MovesUtils.generateHorizontalMoves(this.file, this.rank, 1);
-        let verticalMoves = MovesUtils.generateVerticalMoves(this.file, this.rank, 1);
-        let diagonalMoves = MovesUtils.generateDiagonalMoves(this.file, this.rank, 1);
+        // Generate placements
+        let horizontalPlacements = PlacementUtils.generateHorizontalPlacements(this.file, this.rank, 1);
+        let verticalPlacements = PlacementUtils.generateVerticalPlacements(this.file, this.rank, 1);
+        let diagonalPlacements = PlacementUtils.generateDiagonalPlacements(this.file, this.rank, 1);
 
+        // Convert to moves
+        const horizontalMoves = horizontalPlacements.map(diagonalDirection => diagonalDirection.map(placement => new Move(placement.file, placement.rank, this)));
+        const verticalMoves = verticalPlacements.map(diagonalDirection => diagonalDirection.map(placement => new Move(placement.file, placement.rank, this)));
+        const diagonalMoves = diagonalPlacements.map(diagonalDirection => diagonalDirection.map(placement => new Move(placement.file, placement.rank, this)));
+
+        // Return categorised moves
         return {
             horizontal: horizontalMoves,
             vertical: verticalMoves,
