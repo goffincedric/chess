@@ -7,4 +7,6 @@ const PieceTypes = {
     KING: 'KING',
 };
 
-export { PieceTypes };
+const MAX_PIECE_COUNT = 32;
+
+export { PieceTypes, MAX_PIECE_COUNT };

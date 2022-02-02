@@ -260,7 +260,11 @@ function generatePlacementsLineThroughPlacements(file1, rank1, file2, rank2) {
 function removeDuplicatePlacements(placements) {
     const placementIndicesToRemove = [];
     placements.reduce((visitedPlacements, placement, index) => {
-        if (visitedPlacements.some((visitedPlacement) => visitedPlacement.file === placement.file && visitedPlacement.rank === placement.rank)) {
+        if (
+            visitedPlacements.some(
+                (visitedPlacement) => visitedPlacement.file === placement.file && visitedPlacement.rank === placement.rank,
+            )
+        ) {
             placementIndicesToRemove.push(index);
         } else {
             visitedPlacements.push(placement);

@@ -1,5 +1,6 @@
-import { COLORS, GAME_END_DIALOG, GAMESTATES } from '../../constants/boardConstants.js';
+import { COLORS, GAME_STATES } from '../../constants/boardConstants.js';
 import { CanvasUtils } from '../../utils/canvasUtils.js';
+import { GAME_END_DIALOG } from '../../constants/dialogConstants.js';
 
 // Add listeners for dialogButtons
 const dialogButtonListeners = [];
@@ -9,14 +10,14 @@ function drawGameEndDialog(gameState, isWhiteTurn) {
     // Define what text to show
     let title, description;
     switch (gameState) {
-        case GAMESTATES.CHECKMATE:
+        case GAME_STATES.CHECKMATE:
             title = 'Checkmate!';
             description = `Checkmate, ${isWhiteTurn ? 'black' : 'white'} wins.`;
             break;
-        case GAMESTATES.DRAW_STALEMATE:
-        case GAMESTATES.DRAW_INSUFFICIENT_PIECES:
+        case GAME_STATES.DRAW_STALEMATE:
+        case GAME_STATES.DRAW_INSUFFICIENT_PIECES:
             title = "It's a draw!";
-            if (gameState === GAMESTATES.DRAW_STALEMATE)
+            if (gameState === GAME_STATES.DRAW_STALEMATE)
                 description = `Stalemate, ${isWhiteTurn ? 'black' : 'white'} can't play any more moves.`;
             else description = "Insufficient pieces to finish the game, it's a draw!";
             break;
@@ -95,10 +96,10 @@ function drawGameEndDialog(gameState, isWhiteTurn) {
     // View board button
     let xPos = GAME_END_DIALOG.X_POS + buttonXOffset;
     let yPos = GAME_END_DIALOG.Y_POS + buttonYOffset;
-    addButton(xPos, yPos, 'View board', EndGameDialog.viewBoardListener);
+    addButton(xPos, yPos, 'View board', GameEndDialog.viewBoardListener);
     // Reset game button
     xPos = GAME_END_DIALOG.X_POS + buttonXOffset * 3 + buttonWidth;
-    addButton(xPos, yPos, 'Reset game', EndGameDialog.resetGameListener);
+    addButton(xPos, yPos, 'Reset game', GameEndDialog.resetGameListener);
 }
 
 function checkDialogActions() {
@@ -110,13 +111,13 @@ function checkDialogActions() {
     });
 }
 
-export const EndGameDialog = {
+export const GameEndDialog = {
     drawGameEndDialog,
     checkDialogActions,
 
     // Set default listeners
     viewBoardListener: () => {
-        throw new Error('No EndGameDialog.viewBoardListener listener was supplied');
+        throw new Error('No GameEndDialog.viewBoardListener listener was supplied');
     },
     resetGameListener: () => {
         throw new Error('No EndGameDialog.resetGameListener listener was supplied');

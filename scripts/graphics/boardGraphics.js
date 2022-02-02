@@ -1,23 +1,25 @@
-// Draw border around board
 import {
+    BOARD_BORDER_HEIGHT,
     BOARD_BORDER_STROKE_WIDTH,
     BOARD_BORDER_WIDTH,
     BOARD_OFFSET,
     BOARD_SIZE,
-    CANVAS_SIZE,
     COLORS,
     FILES,
     RANKS,
     SQUARE_SIZE,
+    TOTAL_BOARD_SIZE,
 } from '../constants/boardConstants.js';
 import { BoardUtils } from '../utils/boardUtils.js';
 import { GraphicsUtils } from '../utils/graphicsUtils.js';
+import { CANVAS_HEIGHT } from '../constants/canvasConstants.js';
 
+// Draw border around board
 function drawBorder() {
     // Draw border
     noStroke();
     fill(color(COLORS.DARK));
-    rect(0, 0, BOARD_OFFSET * 2 + BOARD_SIZE, CANVAS_SIZE);
+    rect(0, 0, TOTAL_BOARD_SIZE, CANVAS_HEIGHT);
 
     // Set text color
     fill(color(COLORS.LIGHT));
@@ -75,7 +77,7 @@ function drawBoard() {
     // Draw small stroke around board
     const rectSize = BOARD_BORDER_STROKE_WIDTH * 2 + BOARD_SIZE;
     fill(color(COLORS.LIGHT));
-    rect(BOARD_BORDER_WIDTH, BOARD_BORDER_WIDTH, rectSize, rectSize);
+    rect(BOARD_BORDER_WIDTH, BOARD_BORDER_HEIGHT, rectSize, rectSize);
 
     // Draw squares on board
     noStroke();

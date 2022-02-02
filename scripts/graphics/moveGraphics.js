@@ -3,6 +3,7 @@ import { COLORS } from '../constants/boardConstants.js';
 import { PieceUtils } from '../utils/pieceUtils.js';
 
 function drawEnemyMoves(enemyAttacks) {
+    noStroke();
     if (enemyAttacks?.length) {
         // Color possible moves
         enemyAttacks.reduce((drawnMoves, move) => {
@@ -20,6 +21,7 @@ function drawEnemyMoves(enemyAttacks) {
 
 // Draw potential moves on board for moving piece
 function drawMoves(pieces, movingPiece, movingPieceMoves) {
+    noStroke();
     if (movingPiece) {
         try {
             // Color possible moves

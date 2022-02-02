@@ -20,8 +20,8 @@ function generateFenForMove(move) {
 
 function generateFenForMoves(moves) {
     // Filter out null moves (when board was initialized with FEN string and multiple moves were set to null)
-    const filteredMoves = moves.filter(move => move);
-    return filteredMoves.map(move => generateFenForMove(move));
+    const filteredMoves = moves.filter((move) => move);
+    return filteredMoves.map((move) => generateFenForMove(move));
 }
 
 function generateFenFromBoard(pieces, isWhiteTurn, halfMoveCount, currentPlayerMoves, pastMoves) {
@@ -155,7 +155,7 @@ function generateBoardFromFen(fenString) {
                 // Check current placement has a pawn and an en passant move needs to be generated
                 if (piece.TYPE === PieceTypes.PAWN) {
                     // Check if is pawn first move
-                    let firstMoveFile = (piece.isWhite) ? 2 : 7;
+                    let firstMoveFile = piece.isWhite ? 2 : 7;
                     piece.isFirstMove = piece.file === firstMoveFile;
                     if (!enPassantMove && enPassantRank === currentRank && currentFile) {
                         let fileToCheck = currentFile + (isWhite ? -1 : 1);
@@ -167,9 +167,9 @@ function generateBoardFromFen(fenString) {
                 } else if (piece.TYPE === PieceTypes.ROOK) {
                     // Check if is queen side rook
                     if (piece.rank === 1) {
-                        piece.isFirstMove = (piece.isWhite) ? canWhiteCastleQueenSide : canDarkCastleQueenSide;
+                        piece.isFirstMove = piece.isWhite ? canWhiteCastleQueenSide : canDarkCastleQueenSide;
                     } else {
-                        piece.isFirstMove = (piece.isWhite) ? canWhiteCastleKingSide : canDarkCastleKingSide;
+                        piece.isFirstMove = piece.isWhite ? canWhiteCastleKingSide : canDarkCastleKingSide;
                     }
                 }
 

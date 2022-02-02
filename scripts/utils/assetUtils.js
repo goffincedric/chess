@@ -1,4 +1,3 @@
-
 const assetMap = new Map();
 
 function storeAsset(key, asset) {
@@ -17,4 +16,4 @@ export const AssetUtils = {
     storeAsset,
     getAsset,
     hasAsset,
-}
+};

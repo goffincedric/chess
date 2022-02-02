@@ -1,6 +1,6 @@
 import { MovesUtils } from '../utils/movesUtils.js';
 import { BoardUtils } from '../utils/boardUtils.js';
-import { GAMESTATES } from '../constants/boardConstants.js';
+import { GAME_STATES } from '../constants/boardConstants.js';
 import { PieceUtils } from '../utils/pieceUtils.js';
 import { PlacementUtils } from '../utils/placementUtils.js';
 import { PieceTypes } from '../constants/pieceConstants.js';
@@ -8,6 +8,8 @@ import { Placement } from './placement.js';
 import { Move } from './move.js';
 
 export class Board {
+    players;
+
     _pastPiecesCount;
     pieces;
 
@@ -28,18 +30,20 @@ export class Board {
     // (1 full move === each player made a move, so 10 full moves = 50/51 half moves)
     halfMovesCount = 0;
 
-    constructor(initialFENString) {
+    constructor(player1, player2, initialFENString) {
+        this.players = [player1, player2];
         this.resetGame(initialFENString);
     }
 
     resetGame(initialFENString = null) {
+        this.players.forEach((player) => player.clearCapturedPieces());
         this.initializePieces(initialFENString);
         this._pastPiecesCount = this.pieces.length;
         this.currentPlayerMoves = this.getCurrentPlayerAttacks();
         this.enemyAttacks = this.getEnemyAttacks();
 
         // Set game state to playing
-        this.gameState = GAMESTATES.PLAYING;
+        this.gameState = GAME_STATES.PLAYING;
     }
 
     initializePieces(initialFENString) {
@@ -104,8 +108,11 @@ export class Board {
                     const attackedPieceIndex = this.pieces.findIndex(
                         (piece) => piece.file === move.attackedPiece.file && piece.rank === move.attackedPiece.rank,
                     );
-                    if (attackedPieceIndex) {
-                        this.pieces.splice(attackedPieceIndex, 1);
+                    if (attackedPieceIndex >= 0) {
+                        const capturedPiece = this.pieces.splice(attackedPieceIndex, 1).shift();
+                        // Add captured piece to player's pieces
+                        const currentPlayer = this.players.find((player) => player.isWhite === this.isWhiteTurn);
+                        currentPlayer.addCapturedPiece(capturedPiece);
                     }
                 }
 
@@ -189,16 +196,16 @@ export class Board {
 
         // Look for draw
         if (this.isDrawInsufficientPieces()) {
-            this.gameState = GAMESTATES.DRAW_INSUFFICIENT_PIECES;
+            this.gameState = GAME_STATES.DRAW_INSUFFICIENT_PIECES;
         } else if (this.isThreeFoldRepetition()) {
             // TODO: Fix threefold repetition. First, implement resignations
             console.log(`Stalemate, the same move was played three times.`);
         } else if (this.isCheckMate()) {
             // Look for checkmate (no moves to play)
-            this.gameState = GAMESTATES.CHECKMATE;
+            this.gameState = GAME_STATES.CHECKMATE;
         } else if (this.isStaleMate()) {
             // Look for stalemate
-            this.gameState = GAMESTATES.DRAW_STALEMATE;
+            this.gameState = GAME_STATES.DRAW_STALEMATE;
         }
     }
 

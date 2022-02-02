@@ -1,7 +1,8 @@
-import { CANVAS_SIZE, BOARD_SIZE, BOARD_OFFSET } from '../constants/boardConstants.js';
+import { BOARD_SIZE, BOARD_OFFSET } from '../constants/boardConstants.js';
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants/canvasConstants.js';
 
 function isInCanvas(x, y) {
-    return isPositionBetweenCoordinates(x, y, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    return isPositionBetweenCoordinates(x, y, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 }
 
 function isInBoard(x, y) {

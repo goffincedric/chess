@@ -72,5 +72,5 @@ function drawPawnPromotion(pawnToPromote, isWhiteTurn) {
 export const PieceGraphics = {
     drawPieces,
     drawPawnPromotion,
-    pawnPromotion
-}
+    pawnPromotion,
+};

@@ -1,17 +1,23 @@
-import { CANVAS_SIZE, COLORS, FILES, GAMESTATES, SQUARE_SIZE } from './constants/boardConstants.js';
+import { COLORS, GAME_STATES } from './constants/boardConstants.js';
 import { Board } from './models/board.js';
 import { BoardUtils } from './utils/boardUtils.js';
 import { CanvasUtils } from './utils/canvasUtils.js';
 import { AssetUtils } from './utils/assetUtils.js';
 import { FENUtils } from './utils/fenUtils.js';
-import { EndGameDialog } from './graphics/dialogs/endGameDialog.js';
+import { GameEndDialog } from './graphics/dialogs/gameEndDialog.js';
 import { Bishop, King, Knight, Pawn, Queen, Rook } from './models/pieces';
 import { BoardGraphics } from './graphics/boardGraphics.js';
 import { MoveGraphics } from './graphics/moveGraphics.js';
 import { PieceGraphics } from './graphics/pieceGraphics.js';
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from './constants/canvasConstants.js';
+import { InfoPanelGraphics } from './graphics/infoPanelGraphics.js';
+import { Player } from './models/player.js';
 
+// Create players
+const player1 = new Player('Player 1', true);
+const player2 = new Player('Player 2', false);
 // Initialize board
-let chessBoard = new Board();
+let chessBoard = new Board(player1, player2);
 
 /**
  * P5 hooks
@@ -38,23 +44,23 @@ function preload() {
     });
 
     // Create end game dialog listeners
-    EndGameDialog.viewBoardListener = () => (chessBoard.gameState = GAMESTATES.OBSERVING);
-    EndGameDialog.resetGameListener = () => chessBoard.resetGame();
+    GameEndDialog.viewBoardListener = () => (chessBoard.gameState = GAME_STATES.OBSERVING);
+    GameEndDialog.resetGameListener = () => chessBoard.resetGame();
 }
 
 // Canvas initialization function, called once at start
 function setup() {
-    // Set background for debug purposes
-    background(color(COLORS.DEBUG));
-
     // Create canvas element to draw on
-    createCanvas(CANVAS_SIZE, CANVAS_SIZE);
+    createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Draw border
     BoardGraphics.drawBorder();
 
     // Draw chess board
     BoardGraphics.drawBoard();
+
+    // Draw info panel
+    drawInfoPanelContents();
 
     // Draw pieces
     PieceGraphics.drawPieces(chessBoard.pieces, chessBoard.movingPiece);
@@ -65,14 +71,20 @@ function draw() {
     // Clear canvas
     clear();
 
+    // Set background for debug purposes
+    background(color(COLORS.DEBUG));
+
     // Draw border
     BoardGraphics.drawBorder();
 
     // Draw chess board
     BoardGraphics.drawBoard();
 
+    // Draw info panel
+    drawInfoPanelContents();
+
     // Draw enemy moves
-    MoveGraphics.drawEnemyMoves(chessBoard.enemyAttacks);
+    // MoveGraphics.drawEnemyMoves(chessBoard.enemyAttacks);
 
     // Draw possible moves
     MoveGraphics.drawMoves(chessBoard.pieces, chessBoard.movingPiece, chessBoard.movingPieceMoves);
@@ -85,14 +97,30 @@ function draw() {
         PieceGraphics.drawPawnPromotion(chessBoard.pawnToPromote, chessBoard.isWhiteTurn);
     }
 
-    if (![GAMESTATES.PLAYING, GAMESTATES.OBSERVING].includes(chessBoard.gameState)) {
-        EndGameDialog.drawGameEndDialog(chessBoard.gameState, chessBoard.isWhiteTurn);
+    if (![GAME_STATES.PLAYING, GAME_STATES.OBSERVING].includes(chessBoard.gameState)) {
+        GameEndDialog.drawGameEndDialog(chessBoard.gameState, chessBoard.isWhiteTurn);
     }
 }
 
 /**
  * Functions that draw on canvas
  */
+
+function drawInfoPanelContents() {
+    // Draw info panel
+    InfoPanelGraphics.drawPanel();
+
+    // Draw timestamp text
+    InfoPanelGraphics.drawTimestamp();
+    // Draw current turn
+    InfoPanelGraphics.drawCurrentTurn(chessBoard.isWhiteTurn);
+    // Draw player stats
+    InfoPanelGraphics.drawPlayerStats(chessBoard.players[0], chessBoard.players[1]);
+    // Draw past moves
+    InfoPanelGraphics.drawPastMoves();
+    // Draw action buttons
+    InfoPanelGraphics.drawActionButtons();
+}
 
 /**
  * Event listeners
@@ -103,15 +131,15 @@ function mousePressed() {
     if (!CanvasUtils.isInBoard(mouseX, mouseY)) return;
 
     // Check if is pawn promotion
-    if (chessBoard.gameState === GAMESTATES.PLAYING) {
+    if (chessBoard.gameState === GAME_STATES.PLAYING) {
         if (chessBoard.pawnToPromote) {
             choosePromotionPiece();
         } else {
             setMovingPiece();
         }
-    } else if (chessBoard.gameState !== GAMESTATES.OBSERVING) {
+    } else if (chessBoard.gameState !== GAME_STATES.OBSERVING) {
         // Check dialog actions
-        EndGameDialog.checkDialogActions();
+        GameEndDialog.checkDialogActions();
     }
 }
 
@@ -172,12 +200,10 @@ window.FENUtils = FENUtils;
 /**
  * TODO:
  *  * Pick starting color
- *  * Show captured pieces
- *  * Add current color's turn on right side of canvas
  *  * Add FEN notation support: moves
  *  * Add resignation button
- *  * Add threefold move repetition check
  *  * Add button to export moves (initial board setup + each consequent move) to pgn file (see chess.com pgn file)
+ *  * Add threefold move repetition check
  *  * Integrate in discord bot
  *  * Add AI
  */
