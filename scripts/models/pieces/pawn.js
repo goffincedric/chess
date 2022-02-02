@@ -23,7 +23,7 @@ export class Pawn extends Piece {
             verticalPlacements.push(new Placement(this.file + 2 * offset, this.rank));
         }
         // Convert placements to moves
-        const verticalMoves = verticalPlacements.map((placement) => new Move(placement.file, placement.rank, this));
+        const verticalMoves = verticalPlacements.map((placement) => new Move(placement.file, placement.rank, this, false));
 
         // Pawn capture moves
         const diagonalMoves = this.getAttackingSpaces().map((placement) => [new Move(placement.file, placement.rank, this)]);

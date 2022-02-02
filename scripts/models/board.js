@@ -3,12 +3,15 @@ import { BoardUtils } from '../utils/boardUtils.js';
 import { GAME_STATES } from '../constants/boardConstants.js';
 import { PieceUtils } from '../utils/pieceUtils.js';
 import { PlacementUtils } from '../utils/placementUtils.js';
-import { PieceTypes } from '../constants/pieceConstants.js';
+import { DEFAULT_PIECES_LAYOUT_FEN, PieceTypes } from '../constants/pieceConstants.js';
 import { Placement } from './placement.js';
 import { Move } from './move.js';
+import { FENUtils } from '../utils/fenUtils.js';
+import { Pawn } from './pieces';
 
 export class Board {
     players;
+    initialFENString;
 
     _pastPiecesCount;
     pieces;
@@ -35,7 +38,8 @@ export class Board {
         this.resetGame(initialFENString);
     }
 
-    resetGame(initialFENString = null) {
+    // TODO: Check string 'rnb1kbnr/pppp3p/6p1/1N3pq1/6P1/5p1B/PPPPP2P/RNBQKR b -Qkq - 1 16'
+    resetGame(initialFENString) {
         this.players.forEach((player) => player.clearCapturedPieces());
         this.initializePieces(initialFENString);
         this._pastPiecesCount = this.pieces.length;
@@ -47,6 +51,9 @@ export class Board {
     }
 
     initializePieces(initialFENString) {
+        // Set FEN string to standard if not defined
+        this.initialFENString = initialFENString ?? DEFAULT_PIECES_LAYOUT_FEN;
+
         // Set standard board
         this.movingPiece = null;
         this.movingPieceMoves = null;
@@ -54,22 +61,14 @@ export class Board {
         this.enemyAttacks = [];
         this.currentPlayerMoves = [];
 
-        if (initialFENString) {
-            // Initialize with FEN notation
-            const boardData = FENUtils.generateBoardFromFen(initialFENString);
-            this.pieces = boardData.pieces;
-            this.isWhiteTurn = boardData.isWhiteTurn;
-            this.halfMovesCount = boardData.halfMoveCount;
-            this.pastMoves = Array(boardData.fullMoveCount * 2).fill(null);
-            if (boardData.pastMove) {
-                this.pastMoves[this.pastMoves - 1] = boardData.pastMove;
-            }
-        } else {
-            // Initialize standard board
-            this.pieces = [];
-            this.isWhiteTurn = true;
-            this.pastMoves = [];
-            this.pieces = PieceUtils.getStandardBoardSetup();
+        // Initialize with FEN notation
+        const boardData = FENUtils.generateBoardFromFen(this.initialFENString);
+        this.pieces = boardData.pieces;
+        this.isWhiteTurn = boardData.isWhiteTurn;
+        this.halfMovesCount = boardData.halfMoveCount;
+        this.pastMoves = Array(boardData.fullMoveCount * 2).fill(null);
+        if (boardData.pastMove) {
+            this.pastMoves[this.pastMoves - 1] = boardData.pastMove;
         }
     }
 
@@ -93,6 +92,10 @@ export class Board {
     resetMovingPiece() {
         this.movingPiece = null;
         this.movingPieceMoves = null;
+    }
+
+    resignGame() {
+        chessBoard.gameState = GAME_STATES.RESIGNED;
     }
 
     movePiece(movingPiece, newPlacement) {
@@ -202,6 +205,9 @@ export class Board {
             console.log(`Stalemate, the same move was played three times.`);
         } else if (this.isCheckMate()) {
             // Look for checkmate (no moves to play)
+            const lastMove = this.pastMoves[this.pastMoves.length - 1];
+            lastMove.isChecking = false;
+            lastMove.isCheckMating = true;
             this.gameState = GAME_STATES.CHECKMATE;
         } else if (this.isStaleMate()) {
             // Look for stalemate
@@ -317,6 +323,11 @@ export class Board {
             ...multiPieceMoves,
         ];
 
+        // Filter out non-attacking moves if is enemy check
+        if (isEnemyMoves) {
+            MovesUtils.filterNonAttackingMoves(joinedMoves);
+        }
+
         // Filter out moves not on board
         MovesUtils.removeMovesNotOnBoard(joinedMoves);
 
@@ -360,6 +371,10 @@ export class Board {
             const placementsTargetingKing = this.getPlacementsBetweenAttackersAndPiece(king);
             // Check if king is under attack
             if (placementsTargetingKing.length > 0) {
+                // Set past move as checking
+                if (this.pastMoves.length > 0) {
+                    this.pastMoves[this.pastMoves.length - 1].isChecking = true;
+                }
                 PlacementUtils.filterPlacementsInCommon(joinedMoves, placementsTargetingKing, true);
             }
 

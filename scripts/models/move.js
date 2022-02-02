@@ -4,6 +4,9 @@ import { PieceTypes } from '../constants/pieceConstants.js';
 export class Move extends Placement {
     isEnPassant = false;
     isPawnPromotion = false;
+    isAttacking = true;
+    isChecking = false;
+    isCheckMating = false;
 
     _movingPiece;
     _attackedPiece;
@@ -38,10 +41,11 @@ export class Move extends Placement {
         this._promotedToPiece = JSON.parse(JSON.stringify(piece));
     }
 
-    constructor(file, rank, movingPiece) {
+    constructor(file, rank, movingPiece, isAttacking = true) {
         super(file, rank);
         this.movingPiece = movingPiece;
         this.isPawnPromotion = movingPiece.TYPE === PieceTypes.PAWN && movingPiece.promotionFile === file;
+        this.isAttacking = isAttacking;
     }
 
     setEnPassantPawn(attackedPawn) {

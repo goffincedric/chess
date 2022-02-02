@@ -107,6 +107,19 @@ function filterEnemyPieceMoves(moves, pieces, movingPiece) {
     moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
 }
 
+// Filter out moves that are not attacking moves
+function filterNonAttackingMoves(moves) {
+    const moveIndicesToRemove = [];
+    // Lok for moves to remove where a move is not attacking
+    moves.forEach((moves, index) => {
+        if (!moves.isAttacking) moveIndicesToRemove.push(index);
+    });
+
+    // Remove moves from back to front
+    moveIndicesToRemove.reverse();
+    moveIndicesToRemove.forEach((index) => moves.splice(index, 1));
+}
+
 // Flatten a 2D array
 function flattenPieceMoves(moves) {
     return Object.values(moves)
@@ -130,6 +143,7 @@ export const MovesUtils = {
     removeMovesNotOnBoard,
     filterSamePieceMoves,
     filterEnemyPieceMoves,
+    filterNonAttackingMoves,
     flattenPieceMoves,
     addAttackedDefendedPiecesToMoves,
 };

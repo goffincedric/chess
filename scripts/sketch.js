@@ -43,9 +43,27 @@ function preload() {
         AssetUtils.storeAsset(url, loadImage(url));
     });
 
-    // Create end game dialog listeners
+    // Create listeners
+    const resetGameListener = () => chessBoard.resetGame();
+    const resignGameListener = () => chessBoard.resignGame();
+    // Set info panel button listeners
+    InfoPanelGraphics.resetGameListener = resetGameListener;
+    InfoPanelGraphics.resignGameListener = resignGameListener;
+    InfoPanelGraphics.exportBoardLayoutListener = () =>
+        console.log(
+            FENUtils.generateFenFromBoard(
+                chessBoard.pieces,
+                chessBoard.isWhiteTurn,
+                chessBoard.halfMovesCount,
+                chessBoard.currentPlayerMoves,
+                chessBoard.pastMoves,
+            ),
+        );
+    InfoPanelGraphics.exportGameListener = () =>
+        console.log(FENUtils.generatePGNFromBoard(chessBoard.players, chessBoard.pastMoves, chessBoard.gameState, chessBoard.initialFENString));
+    // Set end game dialog listeners
     GameEndDialog.viewBoardListener = () => (chessBoard.gameState = GAME_STATES.OBSERVING);
-    GameEndDialog.resetGameListener = () => chessBoard.resetGame();
+    GameEndDialog.resetGameListener = resetGameListener;
 }
 
 // Canvas initialization function, called once at start
@@ -117,9 +135,11 @@ function drawInfoPanelContents() {
     // Draw player stats
     InfoPanelGraphics.drawPlayerStats(chessBoard.players[0], chessBoard.players[1]);
     // Draw past moves
-    InfoPanelGraphics.drawPastMoves();
+    InfoPanelGraphics.drawPastMoves(chessBoard.pastMoves);
     // Draw action buttons
-    InfoPanelGraphics.drawActionButtons();
+    const canResign = chessBoard.gameState === GAME_STATES.PLAYING;
+    const canReset = [GAME_STATES.PLAYING, GAME_STATES.OBSERVING].includes(chessBoard.gameState);
+    InfoPanelGraphics.drawActionButtons(canResign, canReset);
 }
 
 /**
@@ -128,10 +148,13 @@ function drawInfoPanelContents() {
 // Mouse pressed listener
 function mousePressed() {
     // Return if click is not on board position
-    if (!CanvasUtils.isInBoard(mouseX, mouseY)) return;
+    if (!CanvasUtils.isInCanvas(mouseX, mouseY)) return;
+
+    // Check for actions
+    InfoPanelGraphics.checkInfoPanelActions();
 
     // Check if is pawn promotion
-    if (chessBoard.gameState === GAME_STATES.PLAYING) {
+    if (CanvasUtils.isInBoard(mouseX, mouseY) && chessBoard.gameState === GAME_STATES.PLAYING) {
         if (chessBoard.pawnToPromote) {
             choosePromotionPiece();
         } else {
@@ -200,9 +223,7 @@ window.FENUtils = FENUtils;
 /**
  * TODO:
  *  * Pick starting color
- *  * Add FEN notation support: moves
- *  * Add resignation button
- *  * Add button to export moves (initial board setup + each consequent move) to pgn file (see chess.com pgn file)
+ *  * Add button listeners to save exported PGN/FEN to file
  *  * Add threefold move repetition check
  *  * Integrate in discord bot
  *  * Add AI

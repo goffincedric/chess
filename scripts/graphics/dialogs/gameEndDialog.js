@@ -12,7 +12,7 @@ function drawGameEndDialog(gameState, isWhiteTurn) {
     switch (gameState) {
         case GAME_STATES.CHECKMATE:
             title = 'Checkmate!';
-            description = `Checkmate, ${isWhiteTurn ? 'black' : 'white'} wins.`;
+            description = `Checkmate, ${isWhiteTurn ? 'black' : 'white'} is victorious.`;
             break;
         case GAME_STATES.DRAW_STALEMATE:
         case GAME_STATES.DRAW_INSUFFICIENT_PIECES:
@@ -21,6 +21,9 @@ function drawGameEndDialog(gameState, isWhiteTurn) {
                 description = `Stalemate, ${isWhiteTurn ? 'black' : 'white'} can't play any more moves.`;
             else description = "Insufficient pieces to finish the game, it's a draw!";
             break;
+        case GAME_STATES.RESIGNED:
+            title = `${isWhiteTurn ? 'White' : 'Black' } resigned!`;
+            description = `${isWhiteTurn ? 'White' : 'Black'} resigned, ${isWhiteTurn ? 'black' : 'white'} is victorious.`;
     }
 
     // Draw box
@@ -37,7 +40,7 @@ function drawGameEndDialog(gameState, isWhiteTurn) {
     textAlign(CENTER, CENTER);
     text(title, GAME_END_DIALOG.X_POS + GAME_END_DIALOG.WIDTH / 2, GAME_END_DIALOG.Y_POS + titleYOffset);
 
-    // Add description to bx
+    // Add description to box
     let descriptionYOffset = titleYOffset + 50;
     let descriptionXOffset = GAME_END_DIALOG.WIDTH / 9;
     let textHeight = GAME_END_DIALOG.HEIGHT / 4;
@@ -79,6 +82,7 @@ function drawGameEndDialog(gameState, isWhiteTurn) {
         const foundListener = dialogButtonListeners.find((listener) => listener.id === buttonText);
         if (!foundListener) {
             dialogButtonListeners.push({
+                id: buttonText,
                 x1,
                 y1,
                 x2,

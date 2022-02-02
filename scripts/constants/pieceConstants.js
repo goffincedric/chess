@@ -8,5 +8,6 @@ const PieceTypes = {
 };
 
 const MAX_PIECE_COUNT = 32;
+const DEFAULT_PIECES_LAYOUT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
-export { PieceTypes, MAX_PIECE_COUNT };
+export { PieceTypes, MAX_PIECE_COUNT, DEFAULT_PIECES_LAYOUT_FEN };
