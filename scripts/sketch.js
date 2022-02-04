@@ -5,7 +5,7 @@ import { CanvasUtils } from './utils/canvasUtils.js';
 import { AssetUtils } from './utils/assetUtils.js';
 import { FENUtils } from './utils/fenUtils.js';
 import { GameEndDialog } from './graphics/dialogs/gameEndDialog.js';
-import { Bishop, King, Knight, Pawn, Queen, Rook } from './models/pieces';
+import { Bishop, King, Knight, Pawn, Queen, Rook } from './models/pieces/index.js';
 import { BoardGraphics } from './graphics/boardGraphics.js';
 import { MoveGraphics } from './graphics/moveGraphics.js';
 import { PieceGraphics } from './graphics/pieceGraphics.js';
@@ -49,18 +49,25 @@ function preload() {
     // Set info panel button listeners
     InfoPanelGraphics.resetGameListener = resetGameListener;
     InfoPanelGraphics.resignGameListener = resignGameListener;
-    InfoPanelGraphics.exportBoardLayoutListener = () =>
-        console.log(
-            FENUtils.generateFenFromBoard(
-                chessBoard.pieces,
-                chessBoard.isWhiteTurn,
-                chessBoard.halfMovesCount,
-                chessBoard.currentPlayerMoves,
-                chessBoard.pastMoves,
-            ),
+    InfoPanelGraphics.exportBoardLayoutListener = async () => {
+        const fenString = FENUtils.generateFenFromBoard(
+            chessBoard.pieces,
+            chessBoard.isWhiteTurn,
+            chessBoard.halfMovesCount,
+            chessBoard.currentPlayerMoves,
+            chessBoard.pastMoves,
         );
-    InfoPanelGraphics.exportGameListener = () =>
-        console.log(FENUtils.generatePGNFromBoard(chessBoard.players, chessBoard.pastMoves, chessBoard.gameState, chessBoard.initialFENString));
+        await navigator.clipboard.writeText(fenString);
+    };
+    InfoPanelGraphics.exportGameListener = async () => {
+        const pgnString = FENUtils.generatePGNFromBoard(
+            chessBoard.players,
+            chessBoard.pastMoves,
+            chessBoard.gameState,
+            chessBoard.initialFENString,
+        );
+        await navigator.clipboard.writeText(pgnString);
+    };
     // Set end game dialog listeners
     GameEndDialog.viewBoardListener = () => (chessBoard.gameState = GAME_STATES.OBSERVING);
     GameEndDialog.resetGameListener = resetGameListener;
@@ -102,7 +109,7 @@ function draw() {
     drawInfoPanelContents();
 
     // Draw enemy moves
-    // MoveGraphics.drawEnemyMoves(chessBoard.enemyAttacks);
+    MoveGraphics.drawEnemyMoves(chessBoard.enemyAttacks);
 
     // Draw possible moves
     MoveGraphics.drawMoves(chessBoard.pieces, chessBoard.movingPiece, chessBoard.movingPieceMoves);
@@ -222,8 +229,8 @@ window.FENUtils = FENUtils;
 
 /**
  * TODO:
+ *  * TODO: Fix king run away from check
  *  * Pick starting color
- *  * Add button listeners to save exported PGN/FEN to file
  *  * Add threefold move repetition check
  *  * Integrate in discord bot
  *  * Add AI

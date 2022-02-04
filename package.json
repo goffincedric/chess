@@ -13,6 +13,7 @@
     "prettier": "^2.5.1"
   },
   "devDependencies": {
-    "@types/p5": "^1.3.3"
+    "@types/p5": "^1.3.3",
+    "@types/file-saver": "^2.0.5"
   }
 }

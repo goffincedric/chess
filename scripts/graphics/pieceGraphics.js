@@ -1,7 +1,7 @@
 import { BoardUtils } from '../utils/boardUtils.js';
 import { COLORS, FILES, SQUARE_SIZE } from '../constants/boardConstants.js';
 import { AssetUtils } from '../utils/assetUtils.js';
-import { Bishop, Knight, Queen, Rook } from '../models/pieces';
+import { Bishop, Knight, Queen, Rook } from '../models/pieces/index.js';
 
 // Initialize pawn promotion object
 let pawnPromotion = {

@@ -1,6 +1,6 @@
 import { FILES, GAME_STATES, RANKS } from '../constants/boardConstants.js';
 import { PieceUtils } from './pieceUtils.js';
-import { Bishop, King, Knight, Pawn, Queen, Rook } from '../models/pieces';
+import { Bishop, King, Knight, Pawn, Queen, Rook } from '../models/pieces/index.js';
 import { BoardUtils } from './boardUtils.js';
 import { Move } from '../models/move.js';
 import { PieceTypes } from '../constants/pieceConstants.js';
@@ -10,11 +10,11 @@ function generateFenForMove(move) {
     let moveNotation = '';
     if (move.castlingMove) {
         if (move.castlingMove.movingPiece.rank < move.movingPiece.rank) {
-            // Castling queenside
-            moveNotation = 'O-O';
-        } else {
             // Castling kingside
             moveNotation = 'O-O-O';
+        } else {
+            // Castling queenside
+            moveNotation = 'O-O';
         }
     } else {
         const pieceNotation = move.movingPiece.TYPE !== PieceTypes.PAWN ? move.movingPiece.fenName : '';
@@ -48,6 +48,19 @@ function generateFenForMoves(moves) {
     return filteredMoves.map((move) => generateFenForMove(move));
 }
 
+/**
+ * Fix:
+ * [Event "Player 1 VS Player 2"]
+ * [Site "Cédric's chess game"]
+ * [Date "2022.2.3"]
+ * [FEN "rnbq2nr/ppb2kNp/2p2p2/3pp1p1/4P3/2NP4/PPP1BPPP/R1BQK2R w KQ - 0 1"]
+ * [White "Player 1"]
+ * [Black "Player 2"]
+ * [Result "1-0"]
+ *
+ * 1. Ng7f5 d5xe4 2. Nc3xe4 bc8xf5 3. Be2h5+ kf7g7 4. Qd1f3 bc7a5+ 5. c2c3 ng8e7 6. O-O-O g5g4 7. Bh5xg4 h7h6 8. Rf1d1 qd8d7 9. Ne4g3 e5e4 10. d3xe4 bf5xg4 11. Rd1xd7 bg4xf3 12. Rd7xe7+ kg7g6 13. g2xf3 rh8d8 14. Bc1e3 rd8d3 15. Re7e8 rd3xe3 16. f2xe3 1-0
+ *                          ^ Issue with this move. Put in lichess
+ */
 function generatePGNForMoves(moves) {
     // Convert moves to FEN notation
     const FENMoves = generateFenForMoves(moves);
@@ -171,7 +184,7 @@ function generateFenFromBoard(pieces, isWhiteTurn, halfMoveCount, currentPlayerM
 }
 
 const FENStringRegex =
-    /^(?<piecePlacement>([pnbrqkPNBRQK1-8]{1,8}\/?){8})\s+(?<sideToMove>[bw])\s+(?<castling>-|K?Q?k?q)\s+(?<enPassant>-|[a-h][3-6])\s+(?<halfMoveCount>\d+)\s+(?<fullMoveCount>\d+)\s*$/;
+    /^(?<piecePlacement>([pnbrqkPNBRQK1-8]{1,8}\/?){8})\s+(?<sideToMove>[bw])\s?(?<castling>-|K?Q?k?q?)\s+(?<enPassant>-|[a-h][3-6])\s+(?<halfMoveCount>\d+)\s+(?<fullMoveCount>\d+)\s*$/;
 // Example: rnbqkbnr/pp2pppp/2p5/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 5
 function generateBoardFromFen(fenString) {
     // Parse FEN string

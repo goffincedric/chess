@@ -222,6 +222,8 @@ function drawPastMoves(moves) {
 const infoPanelButtonListeners = [];
 const actionButtonsYOffset = pastMovesYOffset + pastMovesHeight;
 const actionButtonsHeight = SQUARE_SIZE + BOARD_OFFSET;
+let exportFENTimeoutId, exportPGNTimeoutId;
+const copiedLabel = 'Copied to clipboard';
 function drawActionButtons(canResign, canReset) {
     const buttonWidth = INFO_PANEL_WIDTH / 2 - marginWidth * 2;
     const buttonHeight = actionButtonsHeight / 2 - marginWidth * 2;
@@ -237,7 +239,7 @@ function drawActionButtons(canResign, canReset) {
     }
     if (canReset) {
         addButton(
-            'Reset board',
+            'Reset game',
             TOTAL_BOARD_SIZE + marginWidth,
             TOTAL_BOARD_SIZE - marginWidth - buttonHeight,
             buttonWidth,
@@ -246,20 +248,34 @@ function drawActionButtons(canResign, canReset) {
         );
     }
     addButton(
-        'Export board layout',
+        exportFENTimeoutId ? copiedLabel : 'Export board FEN',
         TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH - marginWidth - buttonWidth,
         actionButtonsYOffset + marginWidth,
         buttonWidth,
         buttonHeight,
-        InfoPanelGraphics.exportBoardLayoutListener,
+        () => {
+            if (!exportFENTimeoutId) {
+                clearTimeout(exportPGNTimeoutId);
+                exportPGNTimeoutId = null;
+                exportFENTimeoutId = setTimeout(() => (exportFENTimeoutId = null), 2000);
+                InfoPanelGraphics.exportBoardLayoutListener();
+            }
+        },
     );
     addButton(
-        'Export game',
+        exportPGNTimeoutId ? copiedLabel : 'Export game PGN',
         TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH - marginWidth - buttonWidth,
         TOTAL_BOARD_SIZE - marginWidth - buttonHeight,
         buttonWidth,
         buttonHeight,
-        InfoPanelGraphics.exportGameListener,
+        () => {
+            if (!exportPGNTimeoutId) {
+                clearTimeout(exportFENTimeoutId);
+                exportFENTimeoutId = null;
+                exportPGNTimeoutId = setTimeout(() => (exportPGNTimeoutId = null), 2000);
+                InfoPanelGraphics.exportGameListener();
+            }
+        },
     );
 }
 

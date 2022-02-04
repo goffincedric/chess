@@ -7,7 +7,6 @@ import { DEFAULT_PIECES_LAYOUT_FEN, PieceTypes } from '../constants/pieceConstan
 import { Placement } from './placement.js';
 import { Move } from './move.js';
 import { FENUtils } from '../utils/fenUtils.js';
-import { Pawn } from './pieces';
 
 export class Board {
     players;
