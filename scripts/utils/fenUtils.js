@@ -17,10 +17,10 @@ function generateFenForMove(move) {
             moveNotation = 'O-O';
         }
     } else {
-        const pieceNotation = move.movingPiece.TYPE !== PieceTypes.PAWN ? move.movingPiece.fenName : '';
+        const pieceNotation = move.movingPiece.TYPE !== PieceTypes.PAWN ? move.movingPiece.fenName.toUpperCase() : '';
         const captureNotation = move.attackedPiece ? 'x' : '';
-        const rankFromNotation = BoardUtils.rankNumberToChar(move.movingPiece.rank).toLowerCase(); // TODO: check if works when always given?
-        const fileFromNotation = `${move.movingPiece.file}`; // TODO: check if works when always given?
+        const rankFromNotation = BoardUtils.rankNumberToChar(move.movingPiece.rank).toLowerCase();
+        const fileFromNotation = `${move.movingPiece.file}`;
         const rankToNotation = BoardUtils.rankNumberToChar(move.rank).toLowerCase();
         const fileToNotation = `${move.file}`;
         moveNotation = `${pieceNotation}${rankFromNotation}${fileFromNotation}${captureNotation}${rankToNotation}${fileToNotation}`;
@@ -48,19 +48,6 @@ function generateFenForMoves(moves) {
     return filteredMoves.map((move) => generateFenForMove(move));
 }
 
-/**
- * Fix:
- * [Event "Player 1 VS Player 2"]
- * [Site "Cédric's chess game"]
- * [Date "2022.2.3"]
- * [FEN "rnbq2nr/ppb2kNp/2p2p2/3pp1p1/4P3/2NP4/PPP1BPPP/R1BQK2R w KQ - 0 1"]
- * [White "Player 1"]
- * [Black "Player 2"]
- * [Result "1-0"]
- *
- * 1. Ng7f5 d5xe4 2. Nc3xe4 bc8xf5 3. Be2h5+ kf7g7 4. Qd1f3 bc7a5+ 5. c2c3 ng8e7 6. O-O-O g5g4 7. Bh5xg4 h7h6 8. Rf1d1 qd8d7 9. Ne4g3 e5e4 10. d3xe4 bf5xg4 11. Rd1xd7 bg4xf3 12. Rd7xe7+ kg7g6 13. g2xf3 rh8d8 14. Bc1e3 rd8d3 15. Re7e8 rd3xe3 16. f2xe3 1-0
- *                          ^ Issue with this move. Put in lichess
- */
 function generatePGNForMoves(moves) {
     // Convert moves to FEN notation
     const FENMoves = generateFenForMoves(moves);

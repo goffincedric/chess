@@ -346,13 +346,11 @@ export class Board {
             const move = this.enemyAttacks.find((move) => move.file === movingPiece.file && move.rank === movingPiece.rank);
             if (move?.movingPiece) {
                 // Get move line (horizontal/vertical/diagonal) through king and enemy that is attacking king
-                const lineOfAttack = PlacementUtils.generatePlacementsBetweenPlacements(
+                const lineOfAttack = PlacementUtils.generatePlacementsLineThroughPlacements(
                     move.movingPiece.file,
                     move.movingPiece.rank,
                     movingPiece.file,
                     movingPiece.rank,
-                    true,
-                    false,
                 );
                 if (lineOfAttack.length > 1) {
                     // Remove moves on entire line where enemy can attack, not only moves up until the king itself
