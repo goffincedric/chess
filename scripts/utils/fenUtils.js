@@ -49,8 +49,19 @@ function generateFenForMoves(moves) {
 }
 
 function generatePGNForMoves(moves) {
+    // Filter out null moves
+    const filteredMoves = moves.filter((move) => !!move);
     // Convert moves to FEN notation
-    const FENMoves = generateFenForMoves(moves);
+    const FENMoves = generateFenForMoves(filteredMoves);
+
+    // Check if black started first move
+    let initialMoveText = '';
+    let moveCount = 1;
+    if (filteredMoves[0]?.movingPiece.isWhite === false) {
+        initialMoveText = `${moveCount}... ${FENMoves.shift()} `;
+        moveCount++;
+    }
+
     // Add group moves in turns
     const FENTurns = FENMoves.reduce((turns, move) => {
         if (turns.length > 0 && turns[turns.length - 1].length === 1) {
@@ -63,8 +74,8 @@ function generatePGNForMoves(moves) {
 
     // Convert turns to move text and return
     return FENTurns.reduce(
-        (movesText, turn, index) => movesText + `${index + 1}. ${turn.join(' ')}${FENTurns.length - 1 === index ? '' : ' '}`,
-        '',
+        (movesText, turn) => movesText + `${moveCount}. ${turn.join(' ')}${FENTurns.length === moveCount ? '' : ' '}`,
+        initialMoveText,
     );
 }
 

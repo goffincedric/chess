@@ -109,7 +109,7 @@ function draw() {
     drawInfoPanelContents();
 
     // Draw enemy moves
-    MoveGraphics.drawEnemyMoves(chessBoard.enemyAttacks);
+    // MoveGraphics.drawEnemyMoves(chessBoard.enemyAttacks);
 
     // Draw possible moves
     MoveGraphics.drawMoves(chessBoard.pieces, chessBoard.movingPiece, chessBoard.movingPieceMoves);
