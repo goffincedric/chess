@@ -3,11 +3,14 @@ import {
     BOARD_BORDER_STROKE_WIDTH,
     BOARD_OFFSET,
     COLORS,
-    GAME_STATES,
     SQUARE_SIZE,
     TOTAL_BOARD_SIZE,
 } from '../constants/boardConstants.js';
-import { INFO_PANEL_DIVIDER_LEFT_WIDTH, INFO_PANEL_DIVIDER_WIDTH, INFO_PANEL_WIDTH } from '../constants/infoPanelConstants.js';
+import {
+    INFO_PANEL_DIVIDER_LEFT_WIDTH,
+    INFO_PANEL_DIVIDER_WIDTH,
+    INFO_PANEL_WIDTH,
+} from '../constants/infoPanelConstants.js';
 import { MAX_PIECE_COUNT, PieceTypes } from '../constants/pieceConstants.js';
 import { AssetUtils } from '../utils/assetUtils.js';
 import { CanvasUtils } from '../utils/canvasUtils.js';
@@ -37,50 +40,50 @@ setTimestampText();
 setInterval(() => setTimestampText(), 1000);
 
 // Draw info panel background
-function drawPanel() {
+function drawPanel(p) {
     // Draw background
-    noStroke();
-    fill(color(COLORS.INFO_PANEL.BACKGROUND));
-    rect(TOTAL_BOARD_SIZE, 0, INFO_PANEL_WIDTH, TOTAL_BOARD_SIZE);
+    p.noStroke();
+    p.fill(p.color(COLORS.INFO_PANEL.BACKGROUND));
+    p.rect(TOTAL_BOARD_SIZE, 0, INFO_PANEL_WIDTH, TOTAL_BOARD_SIZE);
 
     // Draw separating line
-    stroke(color(COLORS.DARKER));
-    strokeWeight(INFO_PANEL_DIVIDER_LEFT_WIDTH);
-    line(TOTAL_BOARD_SIZE, 0, TOTAL_BOARD_SIZE, TOTAL_BOARD_SIZE);
+    p.stroke(p.color(COLORS.DARKER));
+    p.strokeWeight(INFO_PANEL_DIVIDER_LEFT_WIDTH);
+    p.line(TOTAL_BOARD_SIZE, 0, TOTAL_BOARD_SIZE, TOTAL_BOARD_SIZE);
 }
 
 // Draw timestamp on panel
 const timeStampYOffset = BOARD_BORDER_HEIGHT + BOARD_BORDER_STROKE_WIDTH;
-function drawTimestamp() {
+function drawTimestamp(p) {
     // Draw timestamp text
-    noStroke();
-    textSize(timeStampYOffset / 2);
-    textAlign(CENTER, CENTER);
-    fill(color(COLORS.LIGHTER));
-    text(timestampText, textCenterX, timeStampYOffset / 2);
+    p.noStroke();
+    p.textSize(timeStampYOffset / 2);
+    p.textAlign(p.CENTER, p.CENTER);
+    p.fill(p.color(COLORS.LIGHTER));
+    p.text(timestampText, textCenterX, timeStampYOffset / 2);
 
     // Draw line below timestamp
-    stroke(color(COLORS.DARK));
-    strokeWeight(INFO_PANEL_DIVIDER_WIDTH);
-    line(TOTAL_BOARD_SIZE, timeStampYOffset, TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH, timeStampYOffset);
+    p.stroke(p.color(COLORS.DARK));
+    p.strokeWeight(INFO_PANEL_DIVIDER_WIDTH);
+    p.line(TOTAL_BOARD_SIZE, timeStampYOffset, TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH, timeStampYOffset);
 }
 
 // Draw current turn on panel
 const currentTurnYOffset = timeStampYOffset;
 const currentTurnHeight = SQUARE_SIZE;
-function drawCurrentTurn(isWhiteTurn) {
+function drawCurrentTurn(p, isWhiteTurn) {
     // Draw current turn text
-    noStroke();
-    textSize(SQUARE_SIZE / 3);
-    textAlign(CENTER, CENTER);
-    fill(color(COLORS.LIGHTER));
+    p.noStroke();
+    p.textSize(SQUARE_SIZE / 3);
+    p.textAlign(p.CENTER, p.CENTER);
+    p.fill(p.color(COLORS.LIGHTER));
     let turnText = `Current turn: ${isWhiteTurn ? 'White' : 'Black'}`;
-    text(turnText, textCenterX, currentTurnYOffset + currentTurnHeight / 2);
+    p.text(turnText, textCenterX, currentTurnYOffset + currentTurnHeight / 2);
 
     // Draw line below text
-    stroke(color(COLORS.DARK));
-    strokeWeight(INFO_PANEL_DIVIDER_WIDTH);
-    line(
+    p.stroke(p.color(COLORS.DARK));
+    p.strokeWeight(INFO_PANEL_DIVIDER_WIDTH);
+    p.line(
         TOTAL_BOARD_SIZE,
         currentTurnYOffset + currentTurnHeight,
         TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH,
@@ -92,7 +95,7 @@ function drawCurrentTurn(isWhiteTurn) {
 const playersYOffset = currentTurnYOffset + currentTurnHeight;
 const playersHeight = SQUARE_SIZE * 2;
 const playerStatsHeight = playersHeight / 2;
-function drawPlayerStats(player1, player2) {
+function drawPlayerStats(p, player1, player2) {
     // Separate players by colors
     let topPlayer, bottomPlayer;
     if (player1.isWhite) {
@@ -104,14 +107,14 @@ function drawPlayerStats(player1, player2) {
     }
 
     // Draw players
-    drawPlayer(TOP, topPlayer);
-    drawPlayer(BOTTOM, bottomPlayer);
+    drawPlayer(p, p.TOP, topPlayer);
+    drawPlayer(p, p.BOTTOM, bottomPlayer);
 
     // Draw line between players
     const strokeMargin = 10;
-    stroke(color(COLORS.DARK));
-    strokeWeight(INFO_PANEL_DIVIDER_WIDTH - 1);
-    line(
+    p.stroke(p.color(COLORS.DARK));
+    p.strokeWeight(INFO_PANEL_DIVIDER_WIDTH - 1);
+    p.line(
         TOTAL_BOARD_SIZE + strokeMargin,
         playersYOffset + playerStatsHeight,
         TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH - strokeMargin,
@@ -119,29 +122,31 @@ function drawPlayerStats(player1, player2) {
     );
 
     // Draw line below player stats
-    stroke(color(COLORS.DARK));
-    strokeWeight(INFO_PANEL_DIVIDER_WIDTH);
-    line(TOTAL_BOARD_SIZE, playersYOffset + playersHeight, TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH, playersYOffset + playersHeight);
+    p.stroke(p.color(COLORS.DARK));
+    p.strokeWeight(INFO_PANEL_DIVIDER_WIDTH);
+    p.line(TOTAL_BOARD_SIZE, playersYOffset + playersHeight, TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH, playersYOffset + playersHeight);
 }
 
 const playerNameHeight = (SQUARE_SIZE / 7) * 5.5;
 const coloredStripeWidth = 5;
-function drawPlayer(place, player) {
-    noStroke();
+function drawPlayer(p, place, player) {
+    p.noStroke();
     // Define starting y position
-    let yOffset = playersYOffset + (place === BOTTOM ? playerStatsHeight : 0);
+    let yOffset = playersYOffset + (place === p.BOTTOM ? playerStatsHeight : 0);
 
     // Draw player stripe color
     let stripeColor = player.isWhite ? COLORS.LIGHTER : COLORS.DARKER;
-    fill(color(stripeColor));
-    rect(TOTAL_BOARD_SIZE + marginWidth, yOffset + marginWidth, coloredStripeWidth, playerStatsHeight - marginWidth * 2);
+    p.fill(p.color(stripeColor));
+    p.rect(TOTAL_BOARD_SIZE + marginWidth, yOffset + marginWidth, coloredStripeWidth, playerStatsHeight - marginWidth * 2);
 
     // Draw player name
-    fill(color(COLORS.LIGHTER));
-    textSize(playerNameHeight / 2);
-    textAlign(LEFT, BASELINE);
-    textWrap(CHAR);
-    text(
+    p.fill(p.color(COLORS.LIGHTER));
+    p.textSize(playerNameHeight / 2);
+    p.textAlign(p.LEFT, p.BASELINE);
+    if (p.textWrap) {
+        p.textWrap(p.CHAR);
+    }
+    p.text(
         player.name,
         TOTAL_BOARD_SIZE + marginWidth * 2 + coloredStripeWidth,
         yOffset + marginWidth,
@@ -150,24 +155,24 @@ function drawPlayer(place, player) {
     );
 
     // Draw captured pieces
-    drawCapturedPieces(yOffset, player.capturedPieces);
+    drawCapturedPieces(p, yOffset, player.capturedPieces);
 }
 
 const piecesOrder = [PieceTypes.PAWN, PieceTypes.ROOK, PieceTypes.KNIGHT, PieceTypes.BISHOP, PieceTypes.QUEEN];
-function drawCapturedPieces(playerStatsYPos, capturedPiecesMap) {
+function drawCapturedPieces(p, playerStatsYPos, capturedPiecesMap) {
     // Add captured pieces text
     const pieceHeight = playerNameHeight / 3;
     const bottomY = playerStatsYPos + playersHeight / 2 - marginWidth;
     const topY = bottomY - pieceHeight;
-    noStroke();
-    fill(color(COLORS.LIGHTER));
-    textSize(playerNameHeight / 4);
-    textAlign(LEFT, BOTTOM);
+    p.noStroke();
+    p.fill(p.color(COLORS.LIGHTER));
+    p.textSize(playerNameHeight / 4);
+    p.textAlign(p.LEFT, p.BOTTOM);
     const labelText = 'Captured pieces: ';
-    text(labelText, TOTAL_BOARD_SIZE + marginWidth * 2 + coloredStripeWidth, bottomY);
+    p.text(labelText, TOTAL_BOARD_SIZE + marginWidth * 2 + coloredStripeWidth, bottomY);
 
     // Draw captured pieces
-    const labelWidth = textWidth(labelText);
+    const labelWidth = p.textWidth(labelText);
     const totalPieceCount = MAX_PIECE_COUNT / 2; // ÷2 for piece count of each side
     const piecesWidth = INFO_PANEL_WIDTH - coloredStripeWidth - marginWidth * 3 - labelWidth;
     const pieceWidth = (piecesWidth - 4 * marginWidth) / totalPieceCount; // 4 stat margins between each piece type
@@ -180,7 +185,7 @@ function drawCapturedPieces(playerStatsYPos, capturedPiecesMap) {
             const asset = AssetUtils.getAsset(capturedPiecesOfType[0].getAssetUrl());
             capturedPiecesOfType.forEach(() => {
                 const xPos = pieceCount * pieceWidth + marginWidth * marginCount;
-                image(asset, piecesXOffset + xPos, topY, pieceHeight, pieceHeight);
+                p.image(asset, piecesXOffset + xPos, topY, pieceHeight, pieceHeight);
                 pieceCount++;
             });
             marginCount++;
@@ -191,7 +196,7 @@ function drawCapturedPieces(playerStatsYPos, capturedPiecesMap) {
 // Draw moves on panel
 const pastMovesYOffset = playersYOffset + playersHeight;
 const pastMovesHeight = SQUARE_SIZE * 4; // TODO: Potentially 4 high?
-function drawPastMoves(moves) {
+function drawPastMoves(p, moves) {
     // Generate moves text
     let movesText;
     if (moves.length > 0) {
@@ -205,17 +210,19 @@ function drawPastMoves(moves) {
     const yPos = pastMovesYOffset + marginWidth;
     const width = INFO_PANEL_WIDTH - marginWidth * 2;
     const height = pastMovesHeight - marginWidth * 2;
-    noStroke();
-    fill(color(COLORS.LIGHTER));
-    textWrap(WORD);
-    textSize((SQUARE_SIZE / 7 - (marginWidth * 2) / 7) * 1.44);
-    textAlign(LEFT, TOP);
-    text(movesText, xPos, yPos, width, height);
+    p.noStroke();
+    p.fill(p.color(COLORS.LIGHTER));
+    if (p.textWrap) {
+        p.textWrap(p.WORD);
+    }
+    p.textSize((SQUARE_SIZE / 7 - (marginWidth * 2) / 7) * 1.44);
+    p.textAlign(p.LEFT, p.TOP);
+    p.text(movesText, xPos, yPos, width, height);
 
     // Draw line below past moves
-    stroke(color(COLORS.DARK));
-    strokeWeight(INFO_PANEL_DIVIDER_WIDTH);
-    line(TOTAL_BOARD_SIZE, pastMovesYOffset + pastMovesHeight, TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH, pastMovesYOffset + pastMovesHeight);
+    p.stroke(p.color(COLORS.DARK));
+    p.strokeWeight(INFO_PANEL_DIVIDER_WIDTH);
+    p.line(TOTAL_BOARD_SIZE, pastMovesYOffset + pastMovesHeight, TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH, pastMovesYOffset + pastMovesHeight);
 }
 
 // Draw buttons on panel
@@ -224,11 +231,12 @@ const actionButtonsYOffset = pastMovesYOffset + pastMovesHeight;
 const actionButtonsHeight = SQUARE_SIZE + BOARD_OFFSET;
 let exportFENTimeoutId, exportPGNTimeoutId;
 const copiedLabel = 'Copied to clipboard';
-function drawActionButtons(canResign, canReset) {
+function drawActionButtons(p, canResign, canReset) {
     const buttonWidth = INFO_PANEL_WIDTH / 2 - marginWidth * 2;
     const buttonHeight = actionButtonsHeight / 2 - marginWidth * 2;
     if (canResign) {
         addButton(
+            p,
             'Resign',
             TOTAL_BOARD_SIZE + marginWidth,
             actionButtonsYOffset + marginWidth,
@@ -239,6 +247,7 @@ function drawActionButtons(canResign, canReset) {
     }
     if (canReset) {
         addButton(
+            p,
             'Reset game',
             TOTAL_BOARD_SIZE + marginWidth,
             TOTAL_BOARD_SIZE - marginWidth - buttonHeight,
@@ -248,6 +257,7 @@ function drawActionButtons(canResign, canReset) {
         );
     }
     addButton(
+        p,
         exportFENTimeoutId ? copiedLabel : 'Export board FEN',
         TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH - marginWidth - buttonWidth,
         actionButtonsYOffset + marginWidth,
@@ -263,6 +273,7 @@ function drawActionButtons(canResign, canReset) {
         },
     );
     addButton(
+        p,
         exportPGNTimeoutId ? copiedLabel : 'Export game PGN',
         TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH - marginWidth - buttonWidth,
         TOTAL_BOARD_SIZE - marginWidth - buttonHeight,
@@ -279,27 +290,27 @@ function drawActionButtons(canResign, canReset) {
     );
 }
 
-function addButton(buttonText, x, y, width, height, clickListener) {
+function addButton(p, buttonText, x, y, width, height, clickListener) {
     let x1 = x;
     let y1 = y;
     let x2 = x + width;
     let y2 = y + height;
 
     // Draw box
-    strokeWeight(2);
-    stroke(color(COLORS.DARK));
-    if (CanvasUtils.isPositionBetweenCoordinates(mouseX, mouseY, x1, y1, x2, y2)) {
-        fill(color(COLORS.BUTTON_HOVER));
+    p.strokeWeight(2);
+    p.stroke(p.color(COLORS.DARK));
+    if (CanvasUtils.isPositionBetweenCoordinates(p.mouseX, p.mouseY, x1, y1, x2, y2)) {
+        p.fill(p.color(COLORS.BUTTON_HOVER));
     } else {
-        fill(color(COLORS.LIGHT));
+        p.fill(p.color(COLORS.LIGHT));
     }
-    rect(x1, y1, width, height);
+    p.rect(x1, y1, width, height);
 
     // Draw text
-    noStroke();
-    fill(color(COLORS.DARK));
-    textAlign(CENTER, CENTER);
-    text(buttonText, x + width / 2, y + height / 2);
+    p.noStroke();
+    p.fill(p.color(COLORS.DARK));
+    p.textAlign(p.CENTER, p.CENTER);
+    p.text(buttonText, x + width / 2, y + height / 2);
 
     // Add button to dialogListener
     const foundListener = infoPanelButtonListeners.find((listener) => listener.id === buttonText);
@@ -315,10 +326,10 @@ function addButton(buttonText, x, y, width, height, clickListener) {
     }
 }
 
-function checkInfoPanelActions() {
+function checkInfoPanelActions(p) {
     // Look for dialog button click listeners
     infoPanelButtonListeners.forEach((listener) => {
-        if (CanvasUtils.isPositionBetweenCoordinates(mouseX, mouseY, listener.x1, listener.y1, listener.x2, listener.y2)) {
+        if (CanvasUtils.isPositionBetweenCoordinates(p.mouseX, p.mouseY, listener.x1, listener.y1, listener.x2, listener.y2)) {
             listener.click();
         }
     });

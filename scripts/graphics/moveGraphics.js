@@ -2,15 +2,15 @@ import { GraphicsUtils } from '../utils/graphicsUtils.js';
 import { COLORS } from '../constants/boardConstants.js';
 import { PieceUtils } from '../utils/pieceUtils.js';
 
-function drawEnemyMoves(enemyAttacks) {
-    noStroke();
+function drawEnemyMoves(p, enemyAttacks) {
+    p.noStroke();
     if (enemyAttacks?.length) {
         // Color possible moves
         enemyAttacks.reduce((drawnMoves, move) => {
             // Check if move has not been drawn on board yet
             if (!drawnMoves.some((drawnMove) => drawnMove.file === move.file && drawnMove.rank === move.rank)) {
                 // Draw square for move
-                GraphicsUtils.drawSquare(move.file, move.rank, COLORS.MOVES.ENEMY);
+                GraphicsUtils.drawSquare(p, move.file, move.rank, COLORS.MOVES.ENEMY);
                 // Add move to drawn moves
                 drawnMoves.push(move);
             }
@@ -20,8 +20,8 @@ function drawEnemyMoves(enemyAttacks) {
 }
 
 // Draw potential moves on board for moving piece
-function drawMoves(pieces, movingPiece, movingPieceMoves) {
-    noStroke();
+function drawMoves(p, pieces, movingPiece, movingPieceMoves) {
+    p.noStroke();
     if (movingPiece) {
         try {
             // Color possible moves
@@ -31,19 +31,19 @@ function drawMoves(pieces, movingPiece, movingPieceMoves) {
                 let rectColor;
                 // Set color depending on if there is no piece or it is an enemy piece
                 if (!piece) {
-                    rectColor = color(COLORS.MOVES.EMPTY);
+                    rectColor = p.color(COLORS.MOVES.EMPTY);
                 } else if (piece.isWhite !== movingPiece.isWhite) {
-                    rectColor = color(COLORS.MOVES.TAKE_PIECE);
+                    rectColor = p.color(COLORS.MOVES.TAKE_PIECE);
                 }
 
                 // If color was set, set square to that color
                 if (rectColor) {
-                    GraphicsUtils.drawSquare(move.file, move.rank, rectColor);
+                    GraphicsUtils.drawSquare(p, move.file, move.rank, rectColor);
                 }
             });
 
             // Color current square
-            GraphicsUtils.drawSquare(movingPiece.file, movingPiece.rank, COLORS.MOVES.CURRENT);
+            GraphicsUtils.drawSquare(p, movingPiece.file, movingPiece.rank, COLORS.MOVES.CURRENT);
         } catch (e) {
             console.warn(`Couldn't generate possible moves for piece ${movingPiece.constructor.name}`, e);
         }

@@ -6,7 +6,7 @@ import { GAME_END_DIALOG } from '../../constants/dialogConstants.js';
 const dialogButtonListeners = [];
 
 // Draw end of game dialog
-function drawGameEndDialog(gameState, isWhiteTurn) {
+function drawGameEndDialog(p, gameState, isWhiteTurn) {
     // Define what text to show
     let title, description;
     switch (gameState) {
@@ -27,28 +27,28 @@ function drawGameEndDialog(gameState, isWhiteTurn) {
     }
 
     // Draw box
-    strokeWeight(2);
-    stroke(color(COLORS.DARK));
-    fill(color(COLORS.LIGHTER));
-    rect(GAME_END_DIALOG.X_POS, GAME_END_DIALOG.Y_POS, GAME_END_DIALOG.WIDTH, GAME_END_DIALOG.HEIGHT);
+    p.strokeWeight(2);
+    p.stroke(p.color(COLORS.DARK));
+    p.fill(p.color(COLORS.LIGHTER));
+    p.rect(GAME_END_DIALOG.X_POS, GAME_END_DIALOG.Y_POS, GAME_END_DIALOG.WIDTH, GAME_END_DIALOG.HEIGHT);
 
     // Add title to box
     let titleYOffset = 65;
-    fill(color(COLORS.DARK));
-    strokeWeight(0);
-    textSize(32);
-    textAlign(CENTER, CENTER);
-    text(title, GAME_END_DIALOG.X_POS + GAME_END_DIALOG.WIDTH / 2, GAME_END_DIALOG.Y_POS + titleYOffset);
+    p.fill(p.color(COLORS.DARK));
+    p.strokeWeight(0);
+    p.textSize(32);
+    p.textAlign(p.CENTER, p.CENTER);
+    p.text(title, GAME_END_DIALOG.X_POS + GAME_END_DIALOG.WIDTH / 2, GAME_END_DIALOG.Y_POS + titleYOffset);
 
     // Add description to box
     let descriptionYOffset = titleYOffset + 50;
     let descriptionXOffset = GAME_END_DIALOG.WIDTH / 9;
     let textHeight = GAME_END_DIALOG.HEIGHT / 4;
     let textWidth = descriptionXOffset * 7;
-    stroke(color(DARKEST));
-    textSize(24);
-    textAlign(CENTER, TOP);
-    text(description, GAME_END_DIALOG.X_POS + descriptionXOffset, GAME_END_DIALOG.Y_POS + descriptionYOffset, textWidth, textHeight);
+    p.stroke(p.color(DARKEST));
+    p.textSize(24);
+    p.textAlign(p.CENTER, p.TOP);
+    p.text(description, GAME_END_DIALOG.X_POS + descriptionXOffset, GAME_END_DIALOG.Y_POS + descriptionYOffset, textWidth, textHeight);
 
     // Add buttons to box
     let borderOffset = GAME_END_DIALOG.WIDTH / 12;
@@ -63,20 +63,20 @@ function drawGameEndDialog(gameState, isWhiteTurn) {
         let y2 = y + buttonHeight;
 
         // Draw box
-        strokeWeight(2);
-        stroke(color(COLORS.DARK));
+        p.strokeWeight(2);
+        p.stroke(p.color(COLORS.DARK));
         if (CanvasUtils.isPositionBetweenCoordinates(mouseX, mouseY, x1, y1, x2, y2)) {
-            fill(color(COLORS.BUTTON_HOVER));
+            p.fill(p.color(COLORS.BUTTON_HOVER));
         } else {
-            fill(color(COLORS.LIGHT));
+            p.fill(p.color(COLORS.LIGHT));
         }
-        rect(x1, y1, buttonWidth, buttonHeight);
+        p.rect(x1, y1, buttonWidth, buttonHeight);
 
         // Draw text
-        noStroke();
-        fill(color(COLORS.DARK));
-        textAlign(CENTER, CENTER);
-        text(buttonText, x + buttonWidth / 2, y + buttonHeight / 2);
+        p.noStroke();
+        p.fill(p.color(COLORS.DARK));
+        p.textAlign(p.CENTER, p.CENTER);
+        p.text(buttonText, x + buttonWidth / 2, y + buttonHeight / 2);
 
         // Add button to dialogListener
         const foundListener = dialogButtonListeners.find((listener) => listener.id === buttonText);
@@ -106,10 +106,10 @@ function drawGameEndDialog(gameState, isWhiteTurn) {
     addButton(xPos, yPos, 'Reset game', GameEndDialog.resetGameListener);
 }
 
-function checkDialogActions() {
+function checkDialogActions(p) {
     // Look for dialog button click listeners
     dialogButtonListeners.forEach((listener) => {
-        if (CanvasUtils.isPositionBetweenCoordinates(mouseX, mouseY, listener.x1, listener.y1, listener.x2, listener.y2)) {
+        if (CanvasUtils.isPositionBetweenCoordinates(p.mouseX, p.mouseY, listener.x1, listener.y1, listener.x2, listener.y2)) {
             listener.click();
         }
     });

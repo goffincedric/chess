@@ -27,7 +27,11 @@ export class Piece {
     }
 
     getAssetUrl() {
-        return 'assets/' + this.fenName.toLowerCase() + '_' + (this.isWhite ? 'l' : 'd') + '.svg';
+        let extension = '.svg';
+        if (typeof process === 'object') {
+            extension = '.png';
+        }
+        return 'assets/' + this.fenName.toLowerCase() + '_' + (this.isWhite ? 'l' : 'd') + extension;
     }
 
     setPlacement(file, rank) {

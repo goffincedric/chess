@@ -21,22 +21,22 @@ let pawnPromotion = {
 };
 
 // Draw pieces on board
-function drawPieces(pieces, movingPiece) {
+function drawPieces(p, pieces, movingPiece) {
     pieces.forEach((piece) => {
         if (piece !== movingPiece) {
             let position = piece.getPosition();
             const asset = AssetUtils.getAsset(piece.getAssetUrl());
-            image(asset, position.x, position.y, SQUARE_SIZE, SQUARE_SIZE);
+            p.image(asset, position.x, position.y, SQUARE_SIZE, SQUARE_SIZE);
         }
     });
     if (movingPiece) {
         const asset = AssetUtils.getAsset(movingPiece.getAssetUrl());
-        image(asset, mouseX - SQUARE_SIZE / 2, mouseY - SQUARE_SIZE / 2, SQUARE_SIZE, SQUARE_SIZE);
+        p.image(asset, mouseX - SQUARE_SIZE / 2, mouseY - SQUARE_SIZE / 2, SQUARE_SIZE, SQUARE_SIZE);
     }
 }
 
 // Draw pawn promotion container
-function drawPawnPromotion(pawnToPromote, isWhiteTurn) {
+function drawPawnPromotion(p, pawnToPromote, isWhiteTurn) {
     // Get pieces to promote to
     let promotionPieces = Object.values(isWhiteTurn ? pawnPromotion.white : pawnPromotion.dark);
     // Calculate file for box and pieces
@@ -45,16 +45,15 @@ function drawPawnPromotion(pawnToPromote, isWhiteTurn) {
     // Draw box
     const boxPosition = BoardUtils.placementToPosition(file, pawnToPromote.rank);
     const strokeWidth = 1;
-    stroke(color(COLORS.DARKER));
-    strokeWeight(strokeWidth);
-    fill(COLORS.LIGHT);
-    rect(boxPosition.x, boxPosition.y + strokeWidth / 2, SQUARE_SIZE, SQUARE_SIZE * 4 - strokeWidth);
+    p.stroke(p.color(COLORS.DARKER));
+    p.strokeWeight(strokeWidth);
+    p.fill(COLORS.LIGHT);
+    p.rect(boxPosition.x, boxPosition.y + strokeWidth / 2, SQUARE_SIZE, SQUARE_SIZE * 4 - strokeWidth);
 
     // Set piece positions if not done yet
     if (!pawnPromotion.hasSetPiecePositions) {
         // Set piece positions
         promotionPieces.forEach((piece, index) => piece.setPlacement(Math.min(file, FILES) - index, pawnToPromote.rank));
-
         pawnPromotion.hasSetPiecePositions = true;
     }
 
@@ -64,8 +63,8 @@ function drawPawnPromotion(pawnToPromote, isWhiteTurn) {
         position = BoardUtils.placementToPosition(piece.file, piece.rank);
         // Draw promotion pieces
         const asset = AssetUtils.getAsset(piece.getAssetUrl());
-        image(asset, position.x, position.y, SQUARE_SIZE, SQUARE_SIZE);
-        line(position.x, position.y, position.x + SQUARE_SIZE, position.y);
+        p.image(asset, position.x, position.y, SQUARE_SIZE, SQUARE_SIZE);
+        p.line(position.x, position.y, position.x + SQUARE_SIZE, position.y);
     });
 }
 

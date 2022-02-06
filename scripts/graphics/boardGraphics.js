@@ -15,16 +15,16 @@ import { GraphicsUtils } from '../utils/graphicsUtils.js';
 import { CANVAS_HEIGHT } from '../constants/canvasConstants.js';
 
 // Draw border around board
-function drawBorder() {
+function drawBorder(p) {
     // Draw border
-    noStroke();
-    fill(color(COLORS.DARK));
-    rect(0, 0, TOTAL_BOARD_SIZE, CANVAS_HEIGHT);
+    p.noStroke();
+    p.fill(p.color(COLORS.DARK));
+    p.rect(0, 0, TOTAL_BOARD_SIZE, CANVAS_HEIGHT);
 
     // Set text color
-    fill(color(COLORS.LIGHT));
-    textSize(25);
-    textAlign(CENTER, CENTER);
+    p.fill(p.color(COLORS.LIGHT));
+    p.textSize(25);
+    p.textAlign(p.CENTER, p.CENTER);
 
     // Add file markings to border
     function addFileMarkings(xPos, upsideDown = false) {
@@ -33,13 +33,13 @@ function drawBorder() {
             marking = `${FILES - i}`;
             yPos = BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2;
             if (upsideDown) {
-                push();
-                translate(xPos, yPos);
-                rotate(radians(180));
-                text(marking, 0, 0);
-                pop();
+                p.push();
+                p.translate(xPos, yPos);
+                p.rotate(p.radians(180));
+                p.text(marking, 0, 0);
+                p.pop();
             } else {
-                text(marking, xPos, yPos);
+                p.text(marking, xPos, yPos);
             }
         }
     }
@@ -55,13 +55,13 @@ function drawBorder() {
             marking = String.fromCharCode(i + asciiOffset);
             xPos = BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2;
             if (upsideDown) {
-                push();
-                translate(xPos, yPos);
-                rotate(radians(180));
-                text(marking, 0, 0);
-                pop();
+                p.push();
+                p.translate(xPos, yPos);
+                p.rotate(p.radians(180));
+                p.text(marking, 0, 0);
+                p.pop();
             } else {
-                text(marking, xPos, yPos);
+                p.text(marking, xPos, yPos);
             }
         }
     }
@@ -71,22 +71,22 @@ function drawBorder() {
 }
 
 // Draw board on canvas
-function drawBoard() {
-    noStroke();
+function drawBoard(p) {
+    p.noStroke();
 
     // Draw small stroke around board
     const rectSize = BOARD_BORDER_STROKE_WIDTH * 2 + BOARD_SIZE;
-    fill(color(COLORS.LIGHT));
-    rect(BOARD_BORDER_WIDTH, BOARD_BORDER_HEIGHT, rectSize, rectSize);
+    p.fill(p.color(COLORS.LIGHT));
+    p.rect(BOARD_BORDER_WIDTH, BOARD_BORDER_HEIGHT, rectSize, rectSize);
 
     // Draw squares on board
-    noStroke();
+    p.noStroke();
     for (let file = 1; file <= FILES; file++) {
         for (let rank = 1; rank <= RANKS; rank++) {
             // Decide if is light or dark square
             let rectColor = BoardUtils.isLightSquare(file, rank) ? COLORS.LIGHT : COLORS.DARK;
             // Draw square
-            GraphicsUtils.drawSquare(file, rank, rectColor);
+            GraphicsUtils.drawSquare(p, file, rank, rectColor);
         }
     }
 }

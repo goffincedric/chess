@@ -13,35 +13,47 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH } from './constants/canvasConstants.js';
 import { InfoPanelGraphics } from './graphics/infoPanelGraphics.js';
 import { Player } from './models/player.js';
 
-// Create players
-const player1 = new Player('Player 1', true);
-const player2 = new Player('Player 2', false);
-// Initialize board
-let chessBoard = new Board(player1, player2);
+// Create chessboard variable
+let chessBoard;
 
 /**
  * P5 hooks
  */
 // Preload data
-function preload() {
-    // Load piece assets and store in AssetUtils
-    const assetUrls = [
-        new Pawn(1, 1, true).getAssetUrl(),
-        new Pawn(1, 1, false).getAssetUrl(),
-        new Rook(1, 1, true).getAssetUrl(),
-        new Rook(1, 1, false).getAssetUrl(),
-        new Knight(1, 1, true).getAssetUrl(),
-        new Knight(1, 1, false).getAssetUrl(),
-        new Bishop(1, 1, true).getAssetUrl(),
-        new Bishop(1, 1, false).getAssetUrl(),
-        new Queen(1, 1, true).getAssetUrl(),
-        new Queen(1, 1, false).getAssetUrl(),
-        new King(1, 1, true).getAssetUrl(),
-        new King(1, 1, false).getAssetUrl(),
-    ];
-    assetUrls.forEach((url) => {
-        AssetUtils.storeAsset(url, loadImage(url));
-    });
+export function preload(p, board, preloadedAssets) {
+    // If no p5 instance was supplied, use global window
+    p = p ?? window;
+    chessBoard = board;
+    if (!board) {
+        // Create players
+        const player1 = new Player('Player 1', true);
+        const player2 = new Player('Player 2', false);
+        // Create chessboard
+        chessBoard = new Board(player1, player2);
+    }
+
+    if (!preloadedAssets) {
+        // Load piece assets and store in AssetUtils
+        const assetUrls = [
+            new Pawn(1, 1, true).getAssetUrl(),
+            new Pawn(1, 1, false).getAssetUrl(),
+            new Rook(1, 1, true).getAssetUrl(),
+            new Rook(1, 1, false).getAssetUrl(),
+            new Knight(1, 1, true).getAssetUrl(),
+            new Knight(1, 1, false).getAssetUrl(),
+            new Bishop(1, 1, true).getAssetUrl(),
+            new Bishop(1, 1, false).getAssetUrl(),
+            new Queen(1, 1, true).getAssetUrl(),
+            new Queen(1, 1, false).getAssetUrl(),
+            new King(1, 1, true).getAssetUrl(),
+            new King(1, 1, false).getAssetUrl(),
+        ];
+        assetUrls.forEach((url) => {
+            AssetUtils.storeAsset(url, p.loadImage(url));
+        });
+    } else {
+        Object.keys(preloadedAssets).forEach((url) => AssetUtils.storeAsset(url, preloadedAssets[url]));
+    }
 
     // Create listeners
     const resetGameListener = () => chessBoard.resetGame();
@@ -74,56 +86,69 @@ function preload() {
 }
 
 // Canvas initialization function, called once at start
-function setup() {
+export function setup(p, loops = true) {
+    // If no p5 instance was supplied, use global window
+    p = p ?? window;
+
     // Create canvas element to draw on
-    createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    const canvas = p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Draw border
-    BoardGraphics.drawBorder();
+    BoardGraphics.drawBorder(p);
 
     // Draw chess board
-    BoardGraphics.drawBoard();
+    BoardGraphics.drawBoard(p);
 
     // Draw info panel
-    drawInfoPanelContents();
+    drawInfoPanelContents(p);
 
     // Draw pieces
-    PieceGraphics.drawPieces(chessBoard.pieces, chessBoard.movingPiece);
+    PieceGraphics.drawPieces(p, chessBoard.pieces, chessBoard.movingPiece);
+
+    if (!loops) {
+        p.noLoop();
+    }
+
+    // Return canvas element
+    return canvas;
 }
 
 // Canvas update function
-function draw() {
+export function draw(p) {
+    // If no p5 instance was supplied, use global window
+    p = p ?? window;
+
     // Clear canvas
-    clear();
+    p.clear();
 
     // Set background for debug purposes
-    background(color(COLORS.DEBUG));
+    p.background(p.color(COLORS.DEBUG));
 
     // Draw border
-    BoardGraphics.drawBorder();
+    BoardGraphics.drawBorder(p);
 
     // Draw chess board
-    BoardGraphics.drawBoard();
+    BoardGraphics.drawBoard(p);
 
     // Draw info panel
-    drawInfoPanelContents();
+    drawInfoPanelContents(p);
 
     // Draw enemy moves
-    // MoveGraphics.drawEnemyMoves(chessBoard.enemyAttacks);
+    // MoveGraphics.drawEnemyMoves(p, chessBoard.enemyAttacks);
 
     // Draw possible moves
-    MoveGraphics.drawMoves(chessBoard.pieces, chessBoard.movingPiece, chessBoard.movingPieceMoves);
+    MoveGraphics.drawMoves(p, chessBoard.pieces, chessBoard.movingPiece, chessBoard.movingPieceMoves);
 
     // Draw pieces
-    PieceGraphics.drawPieces(chessBoard.pieces, chessBoard.movingPiece);
+    PieceGraphics.drawPieces(p, chessBoard.pieces, chessBoard.movingPiece);
 
     // Draw pawn promotion screen
     if (chessBoard.pawnToPromote) {
-        PieceGraphics.drawPawnPromotion(chessBoard.pawnToPromote, chessBoard.isWhiteTurn);
+        PieceGraphics.drawPawnPromotion(p, chessBoard.pawnToPromote, chessBoard.isWhiteTurn);
     }
 
     if (![GAME_STATES.PLAYING, GAME_STATES.OBSERVING].includes(chessBoard.gameState)) {
-        GameEndDialog.drawGameEndDialog(chessBoard.gameState, chessBoard.isWhiteTurn);
+        GameEndDialog.drawGameEndDialog(p, chessBoard.gameState, chessBoard.isWhiteTurn);
     }
 }
 
@@ -131,22 +156,25 @@ function draw() {
  * Functions that draw on canvas
  */
 
-function drawInfoPanelContents() {
+function drawInfoPanelContents(p) {
+    // If no p5 instance was supplied, use global window
+    p = p ?? window;
+
     // Draw info panel
-    InfoPanelGraphics.drawPanel();
+    InfoPanelGraphics.drawPanel(p);
 
     // Draw timestamp text
-    InfoPanelGraphics.drawTimestamp();
+    InfoPanelGraphics.drawTimestamp(p);
     // Draw current turn
-    InfoPanelGraphics.drawCurrentTurn(chessBoard.isWhiteTurn);
+    InfoPanelGraphics.drawCurrentTurn(p, chessBoard.isWhiteTurn);
     // Draw player stats
-    InfoPanelGraphics.drawPlayerStats(chessBoard.players[0], chessBoard.players[1]);
+    InfoPanelGraphics.drawPlayerStats(p, chessBoard.players[0], chessBoard.players[1]);
     // Draw past moves
-    InfoPanelGraphics.drawPastMoves(chessBoard.pastMoves);
+    InfoPanelGraphics.drawPastMoves(p, chessBoard.pastMoves);
     // Draw action buttons
     const canResign = chessBoard.gameState === GAME_STATES.PLAYING;
     const canReset = [GAME_STATES.PLAYING, GAME_STATES.OBSERVING].includes(chessBoard.gameState);
-    InfoPanelGraphics.drawActionButtons(canResign, canReset);
+    InfoPanelGraphics.drawActionButtons(p, canResign, canReset);
 }
 
 /**
@@ -158,35 +186,41 @@ function mousePressed() {
     if (!CanvasUtils.isInCanvas(mouseX, mouseY)) return;
 
     // Check for actions
-    InfoPanelGraphics.checkInfoPanelActions();
+    InfoPanelGraphics.checkInfoPanelActions(window);
 
     // Check if is pawn promotion
     if (CanvasUtils.isInBoard(mouseX, mouseY) && chessBoard.gameState === GAME_STATES.PLAYING) {
         if (chessBoard.pawnToPromote) {
-            choosePromotionPiece();
+            choosePromotionPiece(window);
         } else {
-            setMovingPiece();
+            setMovingPiece(window);
         }
     } else if (chessBoard.gameState !== GAME_STATES.OBSERVING) {
         // Check dialog actions
-        GameEndDialog.checkDialogActions();
+        GameEndDialog.checkDialogActions(window);
     }
 }
 
-function setMovingPiece() {
+export function setMovingPiece(p) {
+    // If no p5 instance was supplied, use global window
+    p = p ?? window;
+
     // Check if position has piece
-    const piece = chessBoard.getPieceByPosition(mouseX, mouseY);
+    const piece = chessBoard.getPieceByPosition(p.mouseX, p.mouseY);
     if (piece && piece.isWhite === chessBoard.isWhiteTurn) {
         chessBoard.setMovingPiece(piece);
     }
 }
 
-function choosePromotionPiece() {
+export function choosePromotionPiece(p) {
+    // If no p5 instance was supplied, use global window
+    p = p ?? window;
+
     // Get pawn to promote
     const { pawnToPromote } = chessBoard;
 
     // Get piece to promote to
-    const placement = BoardUtils.positionToPlacement(mouseX, mouseY);
+    const placement = BoardUtils.positionToPlacement(p.mouseX, p.mouseY);
     const chosenPiece = Object.values(chessBoard.isWhiteTurn ? PieceGraphics.pawnPromotion.white : PieceGraphics.pawnPromotion.dark).find(
         (piece) => piece.file === placement.file && piece.rank === placement.rank,
     );
@@ -219,17 +253,18 @@ function mouseReleased() {
 }
 
 // Set global functions and export chessBoard
-window.preload = preload;
-window.setup = setup;
-window.draw = draw;
-window.mouseReleased = mouseReleased;
-window.mousePressed = mousePressed;
-window.chessBoard = chessBoard;
-window.FENUtils = FENUtils;
+if (typeof process !== 'object') {
+    window.preload = preload;
+    window.setup = setup;
+    window.draw = draw;
+    window.mousePressed = mousePressed;
+    window.mouseReleased = mouseReleased;
+    window.chessBoard = chessBoard;
+    window.FENUtils = FENUtils;
+}
 
 /**
  * TODO:
- *  * TODO: Fix king run away from check
  *  * Pick starting color
  *  * Add threefold move repetition check
  *  * Integrate in discord bot
