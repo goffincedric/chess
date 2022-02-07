@@ -45,7 +45,7 @@ function drawGameEndDialog(p, gameState, isWhiteTurn) {
     let descriptionXOffset = GAME_END_DIALOG.WIDTH / 9;
     let textHeight = GAME_END_DIALOG.HEIGHT / 4;
     let textWidth = descriptionXOffset * 7;
-    p.stroke(p.color(DARKEST));
+    p.stroke(p.color(p.DARKEST));
     p.textSize(24);
     p.textAlign(p.CENTER, p.TOP);
     p.text(description, GAME_END_DIALOG.X_POS + descriptionXOffset, GAME_END_DIALOG.Y_POS + descriptionYOffset, textWidth, textHeight);
@@ -65,7 +65,7 @@ function drawGameEndDialog(p, gameState, isWhiteTurn) {
         // Draw box
         p.strokeWeight(2);
         p.stroke(p.color(COLORS.DARK));
-        if (CanvasUtils.isPositionBetweenCoordinates(mouseX, mouseY, x1, y1, x2, y2)) {
+        if (CanvasUtils.isPositionBetweenCoordinates(p.mouseX, p.mouseY, x1, y1, x2, y2)) {
             p.fill(p.color(COLORS.BUTTON_HOVER));
         } else {
             p.fill(p.color(COLORS.LIGHT));

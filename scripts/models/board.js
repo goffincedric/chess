@@ -72,8 +72,12 @@ export class Board {
     }
 
     getPieceByPosition(x, y) {
-        const position = BoardUtils.positionToPlacement(x, y);
-        return PieceUtils.getPieceByPlacement(this.pieces, position.file, position.rank);
+        const placement = BoardUtils.positionToPlacement(x, y);
+        return this.getPieceByPlacement(placement.file, placement.rank);
+    }
+
+    getPieceByPlacement(file, rank) {
+        return PieceUtils.getPieceByPlacement(this.pieces, file, rank);
     }
 
     setMovingPiece(piece) {
@@ -88,18 +92,13 @@ export class Board {
         this.movingPieceMoves = null;
     }
 
-    resetMovingPiece() {
-        this.movingPiece = null;
-        this.movingPieceMoves = null;
-    }
-
     resignGame() {
         chessBoard.gameState = GAME_STATES.RESIGNED;
     }
 
-    movePiece(movingPiece, newPlacement) {
+    movePiece(newPlacement) {
         // Check if is new placement
-        if (movingPiece.file !== newPlacement.file || movingPiece.rank !== newPlacement.rank) {
+        if (this.movingPiece.file !== newPlacement.file || this.movingPiece.rank !== newPlacement.rank) {
             // Get move of movingPiece to file and rank
             const move = this.movingPieceMoves.find((move) => move.file === newPlacement.file && move.rank === newPlacement.rank);
             // Check if move was found
@@ -119,7 +118,7 @@ export class Board {
                 }
 
                 // Set piece placement
-                movingPiece.setPlacement(move.file, move.rank);
+                this.movingPiece.setPlacement(move.file, move.rank);
 
                 /**
                  * Check for multi-piece moves
@@ -138,7 +137,7 @@ export class Board {
 
                 // Check if is pawn promotion
                 if (move.isPawnPromotion) {
-                    this.pawnToPromote = movingPiece;
+                    this.pawnToPromote = this.movingPiece;
                 } else {
                     // Set next turn
                     this.toggleTurn();
@@ -147,7 +146,7 @@ export class Board {
         }
 
         // Reset moving piece
-        this.resetMovingPiece();
+        this.clearMovingPiece();
     }
 
     promotePawn(promotedToPiece) {
@@ -539,5 +538,11 @@ export class Board {
         return this.pieces.filter(
             (piece) => (enemy && piece.isWhite !== this.isWhiteTurn) || (!enemy && piece.isWhite === this.isWhiteTurn),
         );
+    }
+
+    getGameName() {
+        const whitePlayer = this.players.find((player) => player.isWhite);
+        const blackPlayer = this.players.find((player) => !player.isWhite);
+        return `${whitePlayer.name} VS ${blackPlayer.name}`;
     }
 }

@@ -14,6 +14,7 @@ import {
 import { MAX_PIECE_COUNT, PieceTypes } from '../constants/pieceConstants.js';
 import { AssetUtils } from '../utils/assetUtils.js';
 import { CanvasUtils } from '../utils/canvasUtils.js';
+import { FENUtils } from '../utils/fenUtils.js';
 
 // Set global positions and sizes
 const textCenterX = TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH / 2;

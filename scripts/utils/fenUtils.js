@@ -79,7 +79,7 @@ function generatePGNForMoves(moves) {
     );
 }
 
-function generatePGNFromBoard(players, moves, gameState, initialFENString, site) {
+function generatePGNFromBoard(gameName, site, initialFENString, players, moves, gameState) {
     const whitePlayer = players.find((player) => player.isWhite);
     const blackPlayer = players.find((player) => !player.isWhite);
     const date = new Date();
@@ -102,8 +102,8 @@ function generatePGNFromBoard(players, moves, gameState, initialFENString, site)
     }
     // Add tags
     const tags = [
-        `[Event "${whitePlayer.name} VS ${blackPlayer.name}"]`,
-        `[Site "${site ?? "Cédric's chess game"}"]`,
+        `[Event "${gameName}"]`,
+        `[Site "${site ?? "chess.goffincedric.be"}"]`,
         `[Date "${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}"]`,
         `[FEN "${initialFENString}"]`,
         `[White "${whitePlayer.name}"]`,

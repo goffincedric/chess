@@ -12,6 +12,8 @@ import { PieceGraphics } from './graphics/pieceGraphics.js';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from './constants/canvasConstants.js';
 import { InfoPanelGraphics } from './graphics/infoPanelGraphics.js';
 import { Player } from './models/player.js';
+import { Placement } from './models/placement.js';
+import { MovesUtils } from './utils/movesUtils.js';
 
 // Create chessboard variable
 let chessBoard;
@@ -23,14 +25,14 @@ let chessBoard;
 export function preload(p, board, preloadedAssets) {
     // If no p5 instance was supplied, use global window
     p = p ?? window;
-    chessBoard = board;
     if (!board) {
         // Create players
         const player1 = new Player('Player 1', true);
         const player2 = new Player('Player 2', false);
         // Create chessboard
-        chessBoard = new Board(player1, player2);
+        board = new Board(player1, player2);
     }
+    setChessBoard(board);
 
     if (!preloadedAssets) {
         // Load piece assets and store in AssetUtils
@@ -73,10 +75,12 @@ export function preload(p, board, preloadedAssets) {
     };
     InfoPanelGraphics.exportGameListener = async () => {
         const pgnString = FENUtils.generatePGNFromBoard(
+            chessBoard.getGameName(),
+            null,
+            chessBoard.initialFENString,
             chessBoard.players,
             chessBoard.pastMoves,
             chessBoard.gameState,
-            chessBoard.initialFENString,
         );
         await navigator.clipboard.writeText(pgnString);
     };
@@ -249,7 +253,34 @@ function mouseReleased() {
     // Get placement on board
     const newPlacement = BoardUtils.positionToPlacement(mouseX, mouseY);
     // Set piece to new placement
-    chessBoard.movePiece(chessBoard.movingPiece, newPlacement);
+    chessBoard.movePiece(newPlacement);
+}
+
+export function setChessBoard(board) {
+    chessBoard = board;
+    if (typeof process !== 'object') {
+        window.chessBoard = chessBoard;
+    }
+}
+
+export function movePieceByFEN(fenMove) {
+    const { from, to } = fenMove;
+    const FENMoveRegex = /^[A-G][1-8]$/i;
+    if (FENMoveRegex.test(from) && FENMoveRegex.test(to)) {
+        // Convert fen to placements
+        const fromPlacement = new Placement(+from[1], BoardUtils.rankCharToNumber(from[0]));
+        const toPlacement = new Placement(+to[1], BoardUtils.rankCharToNumber(to[0]));
+
+        // Get move linked to from and to placements
+        const move = MovesUtils.getMoveByPlacements(chessBoard.currentPlayerMoves, fromPlacement, toPlacement);
+        if (move && move.movingPiece.isWhite === chessBoard.isWhiteTurn) {
+            const piece = chessBoard.getPieceByPlacement(fromPlacement.file, fromPlacement.rank);
+            chessBoard.setMovingPiece(piece);
+            chessBoard.movePiece(toPlacement);
+            return true;
+        }
+    }
+    return false;
 }
 
 // Set global functions and export chessBoard
@@ -259,8 +290,7 @@ if (typeof process !== 'object') {
     window.draw = draw;
     window.mousePressed = mousePressed;
     window.mouseReleased = mouseReleased;
-    window.chessBoard = chessBoard;
-    window.FENUtils = FENUtils;
+    window.movePieceByFEN = movePieceByFEN;
 }
 
 /**

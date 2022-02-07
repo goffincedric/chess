@@ -137,6 +137,13 @@ function addAttackedDefendedPiecesToMoves(moves, pieces) {
     });
 }
 
+function getMoveByPlacements(moves, from, to) {
+    return moves.find(
+        (move) =>
+            move.file === to.file && move.rank === to.rank && move.movingPiece.file === from.file && move.movingPiece.rank === from.rank,
+    );
+}
+
 export const MovesUtils = {
     truncateMoveDirections,
     removeMovesWithEnemies,
@@ -146,4 +153,5 @@ export const MovesUtils = {
     filterNonAttackingMoves,
     flattenPieceMoves,
     addAttackedDefendedPiecesToMoves,
+    getMoveByPlacements,
 };
