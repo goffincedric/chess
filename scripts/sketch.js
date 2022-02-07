@@ -265,7 +265,7 @@ export function setChessBoard(board) {
 
 export function movePieceByFEN(fenMove) {
     const { from, to } = fenMove;
-    const FENMoveRegex = /^[A-G][1-8]$/i;
+    const FENMoveRegex = /^[A-H][1-8]$/i;
     if (FENMoveRegex.test(from) && FENMoveRegex.test(to)) {
         // Convert fen to placements
         const fromPlacement = new Placement(+from[1], BoardUtils.rankCharToNumber(from[0]));
@@ -297,6 +297,6 @@ if (typeof process !== 'object') {
  * TODO:
  *  * Pick starting color
  *  * Add threefold move repetition check
- *  * Integrate in discord bot
+ *  * Flip board for black sideA
  *  * Add AI
  */
