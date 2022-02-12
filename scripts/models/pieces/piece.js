@@ -1,5 +1,6 @@
 import { SQUARE_SIZE } from '../../constants/boardConstants.js';
 import { BoardUtils } from '../../utils/boardUtils.js';
+import { Placement } from '../placement.js';
 
 export class Piece {
     file;
@@ -38,6 +39,10 @@ export class Piece {
         this.file = file;
         this.rank = rank;
         this.isFirstMove = false;
+    }
+
+    getPlacement() {
+        return new Placement(this.file, this.rank);
     }
 
     getPosition() {

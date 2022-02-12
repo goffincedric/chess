@@ -2,7 +2,7 @@ import { GraphicsUtils } from '../utils/graphicsUtils.js';
 import { COLORS } from '../constants/boardConstants.js';
 import { PieceUtils } from '../utils/pieceUtils.js';
 
-function drawEnemyMoves(p, enemyAttacks) {
+function drawEnemyMoves(p, enemyAttacks, isFlipped) {
     p.noStroke();
     if (enemyAttacks?.length) {
         // Color possible moves
@@ -10,7 +10,7 @@ function drawEnemyMoves(p, enemyAttacks) {
             // Check if move has not been drawn on board yet
             if (!drawnMoves.some((drawnMove) => drawnMove.file === move.file && drawnMove.rank === move.rank)) {
                 // Draw square for move
-                GraphicsUtils.drawSquare(p, move.file, move.rank, COLORS.MOVES.ENEMY);
+                GraphicsUtils.drawSquare(p, move.file, move.rank, COLORS.MOVES.ENEMY, isFlipped);
                 // Add move to drawn moves
                 drawnMoves.push(move);
             }
@@ -20,7 +20,7 @@ function drawEnemyMoves(p, enemyAttacks) {
 }
 
 // Draw potential moves on board for moving piece
-function drawMoves(p, pieces, movingPiece, movingPieceMoves) {
+function drawMoves(p, pieces, movingPiece, movingPieceMoves, isFlipped) {
     p.noStroke();
     if (movingPiece) {
         try {
@@ -38,12 +38,12 @@ function drawMoves(p, pieces, movingPiece, movingPieceMoves) {
 
                 // If color was set, set square to that color
                 if (rectColor) {
-                    GraphicsUtils.drawSquare(p, move.file, move.rank, rectColor);
+                    GraphicsUtils.drawSquare(p, move.file, move.rank, rectColor, isFlipped);
                 }
             });
 
             // Color current square
-            GraphicsUtils.drawSquare(p, movingPiece.file, movingPiece.rank, COLORS.MOVES.CURRENT);
+            GraphicsUtils.drawSquare(p, movingPiece.file, movingPiece.rank, COLORS.MOVES.CURRENT, isFlipped);
         } catch (e) {
             console.warn(`Couldn't generate possible moves for piece ${movingPiece.constructor.name}`, e);
         }

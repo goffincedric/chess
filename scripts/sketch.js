@@ -22,9 +22,7 @@ let chessBoard;
  * P5 hooks
  */
 // Preload data
-export function preload(p, board, preloadedAssets) {
-    // If no p5 instance was supplied, use global window
-    p = p ?? window;
+export function preload(p = window, board, preloadedAssets) {
     if (!board) {
         // Create players
         const player1 = new Player('Player 1', true);
@@ -90,16 +88,15 @@ export function preload(p, board, preloadedAssets) {
 }
 
 // Canvas initialization function, called once at start
-export function setup(p, loops = true) {
-    // If no p5 instance was supplied, use global window
-    p = p ?? window;
-
+export function setup(p = window, loops = true) {
     // Create canvas element to draw on
     const canvas = p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Draw border
-    BoardGraphics.drawBorder(p);
+    // Check if board needs to be flipped
+    const flipBoard = !chessBoard.isWhiteTurn;
 
+    // Draw border
+    BoardGraphics.drawBorder(p, flipBoard);
     // Draw chess board
     BoardGraphics.drawBoard(p);
 
@@ -118,9 +115,9 @@ export function setup(p, loops = true) {
 }
 
 // Canvas update function
-export function draw(p) {
-    // If no p5 instance was supplied, use global window
-    p = p ?? window;
+export function draw(p = window) {
+    // Check if board needs to be flipped
+    const flipBoard = !chessBoard.isWhiteTurn;
 
     // Clear canvas
     p.clear();
@@ -129,26 +126,26 @@ export function draw(p) {
     p.background(p.color(COLORS.DEBUG));
 
     // Draw border
-    BoardGraphics.drawBorder(p);
+    BoardGraphics.drawBorder(p, flipBoard);
 
     // Draw chess board
     BoardGraphics.drawBoard(p);
 
+    // Draw enemy moves
+    // MoveGraphics.drawEnemyMoves(p, chessBoard.enemyAttacks, flipBoard);
+
+    // Draw possible moves
+    MoveGraphics.drawMoves(p, chessBoard.pieces, chessBoard.movingPiece, chessBoard.movingPieceMoves, flipBoard);
+
     // Draw info panel
     drawInfoPanelContents(p);
 
-    // Draw enemy moves
-    // MoveGraphics.drawEnemyMoves(p, chessBoard.enemyAttacks);
-
-    // Draw possible moves
-    MoveGraphics.drawMoves(p, chessBoard.pieces, chessBoard.movingPiece, chessBoard.movingPieceMoves);
-
     // Draw pieces
-    PieceGraphics.drawPieces(p, chessBoard.pieces, chessBoard.movingPiece);
+    PieceGraphics.drawPieces(p, chessBoard.pieces, chessBoard.movingPiece, flipBoard);
 
     // Draw pawn promotion screen
     if (chessBoard.pawnToPromote) {
-        PieceGraphics.drawPawnPromotion(p, chessBoard.pawnToPromote, chessBoard.isWhiteTurn);
+        PieceGraphics.drawPawnPromotion(p, chessBoard.pawnToPromote, chessBoard.isWhiteTurn, flipBoard);
     }
 
     if (![GAME_STATES.PLAYING, GAME_STATES.OBSERVING].includes(chessBoard.gameState)) {
@@ -160,10 +157,7 @@ export function draw(p) {
  * Functions that draw on canvas
  */
 
-function drawInfoPanelContents(p) {
-    // If no p5 instance was supplied, use global window
-    p = p ?? window;
-
+function drawInfoPanelContents(p = window) {
     // Draw info panel
     InfoPanelGraphics.drawPanel(p);
 
@@ -205,27 +199,27 @@ function mousePressed() {
     }
 }
 
-export function setMovingPiece(p) {
-    // If no p5 instance was supplied, use global window
-    p = p ?? window;
-
-    // Check if position has piece
-    const piece = chessBoard.getPieceByPosition(p.mouseX, p.mouseY);
+export function setMovingPiece(p = window) {
+    // Check if board is flipped
+    const isFlipped = !chessBoard.isWhiteTurn;
+    // Convert mouse position to placement
+    const placement = BoardUtils.positionToPlacement(p.mouseX, p.mouseY, isFlipped);
+    // Check if placement has a piece
+    const piece = chessBoard.getPieceByPlacement(placement.file, placement.rank);
     if (piece && piece.isWhite === chessBoard.isWhiteTurn) {
         chessBoard.setMovingPiece(piece);
     }
 }
 
-export function choosePromotionPiece(p) {
-    // If no p5 instance was supplied, use global window
-    p = p ?? window;
-
+export function choosePromotionPiece(p = window) {
     // Get pawn to promote
     const { pawnToPromote } = chessBoard;
+    // Check if board is flipped
+    const isFlipped = !chessBoard.isWhiteTurn;
 
     // Get piece to promote to
-    const placement = BoardUtils.positionToPlacement(p.mouseX, p.mouseY);
-    const chosenPiece = Object.values(chessBoard.isWhiteTurn ? PieceGraphics.pawnPromotion.white : PieceGraphics.pawnPromotion.dark).find(
+    const placement = BoardUtils.positionToPlacement(p.mouseX, p.mouseY, isFlipped);
+    const chosenPiece = Object.values(chessBoard.isWhiteTurn ? PieceGraphics.pawnPromotion.whitePieces : PieceGraphics.pawnPromotion.blackPieces).find(
         (piece) => piece.file === placement.file && piece.rank === placement.rank,
     );
     if (chosenPiece) {
@@ -250,8 +244,10 @@ function mouseReleased() {
     // Return if is not moving piece or is promoting pawn
     if (!chessBoard.movingPiece || chessBoard.pawnToPromote) return;
 
+    // Check if board is flipped
+    const isFlipped = !chessBoard.isWhiteTurn;
     // Get placement on board
-    const newPlacement = BoardUtils.positionToPlacement(mouseX, mouseY);
+    const newPlacement = BoardUtils.positionToPlacement(mouseX, mouseY, isFlipped);
     // Set piece to new placement
     chessBoard.movePiece(newPlacement);
 }
@@ -297,6 +293,7 @@ if (typeof process !== 'object') {
  * TODO:
  *  * Pick starting color
  *  * Add threefold move repetition check
- *  * Flip board for black sideA
+ *  * Add settings screen
+ *  * Default: Disable auto-flip board, button to enable auto flip
  *  * Add AI
  */

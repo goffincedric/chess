@@ -15,7 +15,7 @@ import { GraphicsUtils } from '../utils/graphicsUtils.js';
 import { CANVAS_HEIGHT } from '../constants/canvasConstants.js';
 
 // Draw border around board
-function drawBorder(p) {
+function drawBorder(p, isFlipped) {
     // Draw border
     p.noStroke();
     p.fill(p.color(COLORS.DARK));
@@ -25,6 +25,9 @@ function drawBorder(p) {
     p.fill(p.color(COLORS.LIGHT));
     p.textSize(25);
     p.textAlign(p.CENTER, p.CENTER);
+
+    // Check if markings need to be flipped
+    if (isFlipped) GraphicsUtils.flipBoard(p);
 
     // Add file markings to border
     function addFileMarkings(xPos, upsideDown = false) {
@@ -68,6 +71,9 @@ function drawBorder(p) {
 
     addRankMarkings(BOARD_OFFSET / 2, true);
     addRankMarkings(BOARD_SIZE + BOARD_OFFSET * 1.5);
+
+    // Revert flip of markings
+    if (isFlipped) GraphicsUtils.unFlip(p);
 }
 
 // Draw board on canvas
