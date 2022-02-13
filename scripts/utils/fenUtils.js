@@ -6,6 +6,9 @@ import { Move } from '../models/move.js';
 import { PieceTypes } from '../constants/pieceConstants.js';
 
 function generateFenForMove(move) {
+    // Check if move is defined
+    if (!move) return null;
+
     // Generate move notation
     let moveNotation = '';
     if (move.castlingMove) {
@@ -43,27 +46,15 @@ function generateFenForMove(move) {
 }
 
 function generateFenForMoves(moves) {
-    // Filter out null moves (when board was initialized with FEN string and multiple moves were set to null)
-    const filteredMoves = moves.filter((move) => move);
-    return filteredMoves.map((move) => generateFenForMove(move));
+    return moves.map((move) => generateFenForMove(move));
 }
 
 function generatePGNForMoves(moves) {
-    // Filter out null moves
-    const filteredMoves = moves.filter((move) => !!move);
     // Convert moves to FEN notation
-    const FENMoves = generateFenForMoves(filteredMoves);
+    const FENMoves = generateFenForMoves(moves);
 
-    // Check if black started first move
-    let initialMoveText = '';
-    let moveCount = 1;
-    if (filteredMoves[0]?.movingPiece.isWhite === false) {
-        initialMoveText = `${moveCount}... ${FENMoves.shift()} `;
-        moveCount++;
-    }
-
-    // Add group moves in turns
-    const FENTurns = FENMoves.reduce((turns, move) => {
+    // Group moves in turns
+    let FENTurns = FENMoves.reduce((turns, move) => {
         if (turns.length > 0 && turns[turns.length - 1].length === 1) {
             turns[turns.length - 1].push(move);
         } else {
@@ -72,9 +63,32 @@ function generatePGNForMoves(moves) {
         return turns;
     }, []);
 
+    // Set starting move count and filter out empty turns
+    let moveCount = 1;
+    FENTurns = FENTurns.filter((turn) => {
+        if (turn[1] === null) {
+            moveCount += 1;
+            return false;
+        } else if (turn[0] === null) {
+            turn.shift();
+        }
+        return true;
+    });
+
+    // Check if black started first move
+    let initialMoveText = '';
+    let firstMove = moves.find((move) => !!move);
+    if (firstMove?.movingPiece.isWhite === false) {
+        const firstFENTurn = FENTurns.shift()[0];
+        initialMoveText = `${moveCount++}... ${firstFENTurn} ${FENTurns.length > 0 ? `${moveCount++}. ` : ''}`;
+    } else {
+        initialMoveText = `${moveCount++}. `;
+    }
+
     // Convert turns to move text and return
     return FENTurns.reduce(
-        (movesText, turn) => movesText + `${moveCount}. ${turn.join(' ')}${FENTurns.length === moveCount ? '' : ' '}`,
+        (movesText, turn, index) =>
+            `${movesText}${turn.join(' ')} ${turn.length === 2 && FENTurns.length - 1 !== index || FENTurns.length - 1 !== index ? moveCount++ + '. ' : ''}`,
         initialMoveText,
     );
 }
@@ -103,7 +117,7 @@ function generatePGNFromBoard(gameName, site, initialFENString, players, moves, 
     // Add tags
     const tags = [
         `[Event "${gameName}"]`,
-        `[Site "${site ?? "chess.goffincedric.be"}"]`,
+        `[Site "${site ?? 'chess.goffincedric.be'}"]`,
         `[Date "${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}"]`,
         `[FEN "${initialFENString}"]`,
         `[White "${whitePlayer.name}"]`,

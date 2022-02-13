@@ -28,5 +28,5 @@ export const GraphicsUtils = {
     drawSquare,
     flipBoard,
     flipLocally,
-    unFlip
+    unFlip,
 };

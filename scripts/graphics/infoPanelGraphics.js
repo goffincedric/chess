@@ -6,11 +6,7 @@ import {
     SQUARE_SIZE,
     TOTAL_BOARD_SIZE,
 } from '../constants/boardConstants.js';
-import {
-    INFO_PANEL_DIVIDER_LEFT_WIDTH,
-    INFO_PANEL_DIVIDER_WIDTH,
-    INFO_PANEL_WIDTH,
-} from '../constants/infoPanelConstants.js';
+import { INFO_PANEL_DIVIDER_LEFT_WIDTH, INFO_PANEL_DIVIDER_WIDTH, INFO_PANEL_WIDTH } from '../constants/infoPanelConstants.js';
 import { MAX_PIECE_COUNT, PieceTypes } from '../constants/pieceConstants.js';
 import { AssetUtils } from '../utils/assetUtils.js';
 import { CanvasUtils } from '../utils/canvasUtils.js';

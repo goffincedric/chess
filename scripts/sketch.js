@@ -4,7 +4,6 @@ import { BoardUtils } from './utils/boardUtils.js';
 import { CanvasUtils } from './utils/canvasUtils.js';
 import { AssetUtils } from './utils/assetUtils.js';
 import { FENUtils } from './utils/fenUtils.js';
-import { GameEndDialog } from './graphics/dialogs/gameEndDialog.js';
 import { Bishop, King, Knight, Pawn, Queen, Rook } from './models/pieces/index.js';
 import { BoardGraphics } from './graphics/boardGraphics.js';
 import { MoveGraphics } from './graphics/moveGraphics.js';
@@ -14,6 +13,8 @@ import { InfoPanelGraphics } from './graphics/infoPanelGraphics.js';
 import { Player } from './models/player.js';
 import { Placement } from './models/placement.js';
 import { MovesUtils } from './utils/movesUtils.js';
+import { DialogGraphics } from './graphics/dialogGraphics.js';
+import { GameEndDialog } from './dialogs/gameEndDialog.js';
 
 // Create chessboard variable
 let chessBoard;
@@ -55,9 +56,37 @@ export function preload(p = window, board, preloadedAssets) {
         Object.keys(preloadedAssets).forEach((url) => AssetUtils.storeAsset(url, preloadedAssets[url]));
     }
 
+    // Initialize dialogs
+    initializeDialogs();
+
+    // Setup info panel button listeners
+    initializeInfoPanelButtons();
+}
+
+function initializeDialogs() {
+    // Create listeners
+    const resetGameListener = () => {
+        chessBoard.resetGame();
+        GameEndDialog.dialog.hide();
+    };
+    const viewBoardListener = () => {
+        chessBoard.gameState = GAME_STATES.OBSERVING;
+        GameEndDialog.dialog.hide();
+    };
+
+    // Setup game end dialog
+    GameEndDialog.buttons.resetGameButton.action = resetGameListener;
+    GameEndDialog.buttons.viewBoardButton.action = viewBoardListener;
+
+    // Add dialog to graphics
+    DialogGraphics.addDialog(GameEndDialog.dialog);
+}
+
+function initializeInfoPanelButtons() {
     // Create listeners
     const resetGameListener = () => chessBoard.resetGame();
     const resignGameListener = () => chessBoard.resignGame();
+
     // Set info panel button listeners
     InfoPanelGraphics.resetGameListener = resetGameListener;
     InfoPanelGraphics.resignGameListener = resignGameListener;
@@ -82,9 +111,6 @@ export function preload(p = window, board, preloadedAssets) {
         );
         await navigator.clipboard.writeText(pgnString);
     };
-    // Set end game dialog listeners
-    GameEndDialog.viewBoardListener = () => (chessBoard.gameState = GAME_STATES.OBSERVING);
-    GameEndDialog.resetGameListener = resetGameListener;
 }
 
 // Canvas initialization function, called once at start
@@ -149,8 +175,11 @@ export function draw(p = window) {
     }
 
     if (![GAME_STATES.PLAYING, GAME_STATES.OBSERVING].includes(chessBoard.gameState)) {
-        GameEndDialog.drawGameEndDialog(p, chessBoard.gameState, chessBoard.isWhiteTurn);
+        GameEndDialog.updateGameEndDialogText(chessBoard.gameState, chessBoard.isWhiteTurn);
+        GameEndDialog.dialog.show();
     }
+
+    DialogGraphics.drawDialogs(p);
 }
 
 /**
@@ -186,6 +215,9 @@ function mousePressed() {
     // Check for actions
     InfoPanelGraphics.checkInfoPanelActions(window);
 
+    // Check for dialog actions
+    DialogGraphics.checkDialogActions(window);
+
     // Check if is pawn promotion
     if (CanvasUtils.isInBoard(mouseX, mouseY) && chessBoard.gameState === GAME_STATES.PLAYING) {
         if (chessBoard.pawnToPromote) {
@@ -193,9 +225,6 @@ function mousePressed() {
         } else {
             setMovingPiece(window);
         }
-    } else if (chessBoard.gameState !== GAME_STATES.OBSERVING) {
-        // Check dialog actions
-        GameEndDialog.checkDialogActions(window);
     }
 }
 
@@ -219,9 +248,9 @@ export function choosePromotionPiece(p = window) {
 
     // Get piece to promote to
     const placement = BoardUtils.positionToPlacement(p.mouseX, p.mouseY, isFlipped);
-    const chosenPiece = Object.values(chessBoard.isWhiteTurn ? PieceGraphics.pawnPromotion.whitePieces : PieceGraphics.pawnPromotion.blackPieces).find(
-        (piece) => piece.file === placement.file && piece.rank === placement.rank,
-    );
+    const chosenPiece = Object.values(
+        chessBoard.isWhiteTurn ? PieceGraphics.pawnPromotion.whitePieces : PieceGraphics.pawnPromotion.blackPieces,
+    ).find((piece) => piece.file === placement.file && piece.rank === placement.rank);
     if (chosenPiece) {
         // Create new instance of chosen piece
         const promotedPiece = new chosenPiece.constructor(pawnToPromote.file, pawnToPromote.rank, pawnToPromote.isWhite, false);
@@ -291,6 +320,9 @@ if (typeof process !== 'object') {
 
 /**
  * TODO:
+ *  * Add check to Dialog to see if button bounding box is inside the dialog bounding box
+ *  * Fix king not being able to take pawn attacking it
+ *  * Add caching game to localStorage if available (store PGN on each move and import PGN after refresh)
  *  * Pick starting color
  *  * Add threefold move repetition check
  *  * Add settings screen

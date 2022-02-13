@@ -66,6 +66,7 @@ export class Board {
         this.isWhiteTurn = boardData.isWhiteTurn;
         this.halfMovesCount = boardData.halfMoveCount;
         this.pastMoves = Array((boardData.fullMoveCount - 1) * 2).fill(null);
+        if (!this.isWhiteTurn) this.pastMoves.push(null);
         if (boardData.pastMove) {
             this.pastMoves[this.pastMoves - 1] = boardData.pastMove;
         }

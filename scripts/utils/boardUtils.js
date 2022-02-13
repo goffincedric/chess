@@ -5,7 +5,7 @@ import { Position } from '../models/position.js';
 function positionToPlacement(x, y, isFlipped) {
     let normalizedX = x;
     let normalizedY = y;
-    if (isFlipped){
+    if (isFlipped) {
         normalizedX = BOARD_OFFSET * 2 + BOARD_SIZE - x;
         normalizedY = BOARD_OFFSET * 2 + BOARD_SIZE - y;
     }
