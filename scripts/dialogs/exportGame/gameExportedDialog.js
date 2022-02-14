@@ -13,7 +13,7 @@ const closeDialogButton = new DialogButton('Close', DialogConstants.DEFAULT_DIAL
 const gameExportedDialog = new Dialog(
     new DialogLabel('Export game for analysis', 28),
     new DialogLabel(
-        'The game has been exported to your clipboard and can be used for analysis on sites such as' +
+        'The game has been exported to your clipboard and can be used for analysis on sites such as ' +
             'chess.com/analysis, lichess.org/paste or any other site accepting the exported format.',
         18,
         'TOP',

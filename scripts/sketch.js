@@ -315,8 +315,7 @@ if (EnvironmentUtils.isBrowserEnvironment()) {
 
 /**
  * TODO:
- *  * Add undo / redo buttons just above infopanel action buttons
- *  * Fix king not being able to take pawn attacking it
+ *  * Add undo / redo buttons just above info panel action buttons
  *  * Add caching game to localStorage if available (store PGN on each move and import PGN after refresh)
  *  * Pick starting color
  *  * Add threefold move repetition check

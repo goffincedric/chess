@@ -72,8 +72,8 @@ export class Board {
         }
     }
 
-    getPieceByPosition(x, y) {
-        const placement = BoardUtils.positionToPlacement(x, y);
+    getPieceByPosition(x, y, isFlipped) {
+        const placement = BoardUtils.positionToPlacement(x, y, isFlipped);
         return this.getPieceByPlacement(placement.file, placement.rank);
     }
 
@@ -231,7 +231,7 @@ export class Board {
     }
 
     isDrawInsufficientPieces() {
-        //Is draw if:
+        // Is draw if:
         // * King vs. king
         // * King and bishop vs. king
         // * King and knight vs. king
@@ -345,16 +345,26 @@ export class Board {
             // Find pieces that attack king
             const move = this.enemyAttacks.find((move) => move.file === movingPiece.file && move.rank === movingPiece.rank);
             if (move?.movingPiece) {
-                // Get move line (horizontal/vertical/diagonal) through king and enemy that is attacking king
-                const lineOfAttack = PlacementUtils.generatePlacementsLineThroughPlacements(
-                    move.movingPiece.file,
-                    move.movingPiece.rank,
+                // Check if king can attack attacking piece
+                const attackLine = PlacementUtils.generatePlacementsBetweenPlacements(
                     movingPiece.file,
                     movingPiece.rank,
+                    move.movingPiece.file,
+                    move.movingPiece.rank,
+                    false,
+                    true,
                 );
-                if (lineOfAttack.length > 1) {
+                // Don't remove entire line if enemy is 1 square away from king
+                if (attackLine.length > 1) {
+                    // Get move line (horizontal/vertical/diagonal) through king and enemy that is attacking king
+                    const lineOfEnemyAttack = PlacementUtils.generatePlacementsLineThroughPlacements(
+                        move.movingPiece.file,
+                        move.movingPiece.rank,
+                        movingPiece.file,
+                        movingPiece.rank,
+                    );
                     // Remove moves on entire line where enemy can attack, not only moves up until the king itself
-                    PlacementUtils.filterPlacementsInCommon(joinedMoves, lineOfAttack, false);
+                    PlacementUtils.filterPlacementsInCommon(joinedMoves, lineOfEnemyAttack, false);
                 }
             }
         } else if (!isEnemyMoves) {
