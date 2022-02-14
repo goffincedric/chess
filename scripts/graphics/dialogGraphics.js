@@ -1,6 +1,7 @@
 import { COLORS } from '../constants/boardConstants.js';
 import { Dialog } from '../models/dialog/dialog.js';
 import { CanvasUtils } from '../utils/canvasUtils.js';
+import { DialogConstants } from '../constants/dialogConstants.js';
 
 const dialogs = [];
 
@@ -26,28 +27,31 @@ function drawDialog(p, dialog) {
     p.rect(dialog.boundingBox.x1, dialog.boundingBox.y1, dialog.boundingBox.getWidth(), dialog.boundingBox.getHeight());
 
     // Add title to box
-    let titleYOffset = 65;
+    let titleYOffset = DialogConstants.DEFAULT_DIALOG.BORDER_OFFSET;
+    let textSize = dialog.title?.textSize ?? 32;
     p.fill(p.color(COLORS.DARK));
     p.strokeWeight(0);
-    p.textSize(32);
+    p.textSize(textSize);
     p.textAlign(p.CENTER, p.CENTER);
-    p.text(dialog.title, dialog.boundingBox.x1 + dialog.boundingBox.getWidth() / 2, dialog.boundingBox.y1 + titleYOffset);
+    p.text(dialog.title.text, dialog.boundingBox.x1 + dialog.boundingBox.getWidth() / 2, dialog.boundingBox.y1 + titleYOffset);
 
     // Add description to box
-    let descriptionYOffset = titleYOffset + 50;
-    let descriptionXOffset = dialog.boundingBox.getWidth() / 9;
-    let textHeight = dialog.boundingBox.getHeight() / 4;
-    let textWidth = descriptionXOffset * 7;
-    p.stroke(p.color(p.DARKEST));
-    p.textSize(24);
-    p.textAlign(p.CENTER, p.TOP);
-    p.text(
-        dialog.description,
-        dialog.boundingBox.x1 + descriptionXOffset,
-        dialog.boundingBox.y1 + descriptionYOffset,
-        textWidth,
-        textHeight,
-    );
+    if (dialog.description) {
+        let descriptionYOffset = titleYOffset + textSize;
+        let descriptionXOffset = dialog.boundingBox.getWidth() / 9;
+        let textHeight = dialog.boundingBox.getHeight() / 2.5;
+        let textWidth = descriptionXOffset * 7;
+        p.stroke(p.color(p.DARKEST));
+        p.textSize(dialog.description?.textSize ?? 24);
+        p.textAlign(p.CENTER, dialog.description.verticalAlign === 'CENTER' ? p.CENTER : p.TOP);
+        p.text(
+            dialog.description.text,
+            dialog.boundingBox.x1 + descriptionXOffset,
+            dialog.boundingBox.y1 + descriptionYOffset,
+            textWidth,
+            textHeight,
+        );
+    }
 
     // Draw dialog buttons
     dialog.buttons.forEach((button) => drawDialogButton(p, button));
@@ -77,6 +81,7 @@ function drawDialogButton(p, button) {
     p.noStroke();
     p.fill(p.color(COLORS.DARK));
     p.textAlign(p.CENTER, p.CENTER);
+    p.textSize(button.textSize || DialogConstants.DEFAULT_DIALOG.BUTTON_TEXT_SIZE);
     p.text(
         button.text,
         button.boundingBox.x1 + button.boundingBox.getWidth() / 2,
@@ -105,9 +110,14 @@ function checkDialogActions(p) {
     }
 }
 
+function isDrawingDialogs() {
+    return dialogs.some((dialog) => dialog.isShown);
+}
+
 export const DialogGraphics = {
     addDialog,
     removeDialog,
     drawDialogs,
     checkDialogActions,
+    isDrawingDialogs,
 };

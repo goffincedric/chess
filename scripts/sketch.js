@@ -3,7 +3,6 @@ import { Board } from './models/board.js';
 import { BoardUtils } from './utils/boardUtils.js';
 import { CanvasUtils } from './utils/canvasUtils.js';
 import { AssetUtils } from './utils/assetUtils.js';
-import { FENUtils } from './utils/fenUtils.js';
 import { Bishop, King, Knight, Pawn, Queen, Rook } from './models/pieces/index.js';
 import { BoardGraphics } from './graphics/boardGraphics.js';
 import { MoveGraphics } from './graphics/moveGraphics.js';
@@ -15,6 +14,11 @@ import { Placement } from './models/placement.js';
 import { MovesUtils } from './utils/movesUtils.js';
 import { DialogGraphics } from './graphics/dialogGraphics.js';
 import { GameEndDialog } from './dialogs/gameEndDialog.js';
+import { ExportGameDialog } from './dialogs/exportGame/exportGameDialog.js';
+import { GameExportedDialog } from './dialogs/exportGame/gameExportedDialog.js';
+import { EnvironmentUtils } from './utils/environmentUtils.js';
+import { SettingsDialog } from './dialogs/settingsDialog.js';
+import { Settings } from './config/settings.js';
 
 // Create chessboard variable
 let chessBoard;
@@ -78,7 +82,10 @@ function initializeDialogs() {
     GameEndDialog.buttons.resetGameButton.action = resetGameListener;
     GameEndDialog.buttons.viewBoardButton.action = viewBoardListener;
 
-    // Add dialog to graphics
+    // Add initialized dialogs to DialogGraphics
+    DialogGraphics.addDialog(ExportGameDialog.dialog);
+    DialogGraphics.addDialog(GameExportedDialog.dialog);
+    DialogGraphics.addDialog(SettingsDialog.dialog);
     DialogGraphics.addDialog(GameEndDialog.dialog);
 }
 
@@ -90,27 +97,8 @@ function initializeInfoPanelButtons() {
     // Set info panel button listeners
     InfoPanelGraphics.resetGameListener = resetGameListener;
     InfoPanelGraphics.resignGameListener = resignGameListener;
-    InfoPanelGraphics.exportBoardLayoutListener = async () => {
-        const fenString = FENUtils.generateFenFromBoard(
-            chessBoard.pieces,
-            chessBoard.isWhiteTurn,
-            chessBoard.halfMovesCount,
-            chessBoard.currentPlayerMoves,
-            chessBoard.pastMoves,
-        );
-        await navigator.clipboard.writeText(fenString);
-    };
-    InfoPanelGraphics.exportGameListener = async () => {
-        const pgnString = FENUtils.generatePGNFromBoard(
-            chessBoard.getGameName(),
-            null,
-            chessBoard.initialFENString,
-            chessBoard.players,
-            chessBoard.pastMoves,
-            chessBoard.gameState,
-        );
-        await navigator.clipboard.writeText(pgnString);
-    };
+    InfoPanelGraphics.exportGameListener = () => ExportGameDialog.dialog.show();
+    InfoPanelGraphics.settingsListener = () => SettingsDialog.dialog.show();
 }
 
 // Canvas initialization function, called once at start
@@ -119,7 +107,7 @@ export function setup(p = window, loops = true) {
     const canvas = p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Check if board needs to be flipped
-    const flipBoard = !chessBoard.isWhiteTurn;
+    const flipBoard = Settings.autoFlipBoard && !chessBoard.isWhiteTurn;
 
     // Draw border
     BoardGraphics.drawBorder(p, flipBoard);
@@ -143,7 +131,7 @@ export function setup(p = window, loops = true) {
 // Canvas update function
 export function draw(p = window) {
     // Check if board needs to be flipped
-    const flipBoard = !chessBoard.isWhiteTurn;
+    const flipBoard = Settings.autoFlipBoard && !chessBoard.isWhiteTurn;
 
     // Clear canvas
     p.clear();
@@ -209,28 +197,30 @@ function drawInfoPanelContents(p = window) {
  */
 // Mouse pressed listener
 function mousePressed() {
-    // Return if click is not on board position
+    // Return if click is not on canvas position
     if (!CanvasUtils.isInCanvas(mouseX, mouseY)) return;
 
-    // Check for actions
-    InfoPanelGraphics.checkInfoPanelActions(window);
+    if (DialogGraphics.isDrawingDialogs()) {
+        // Check for dialog actions
+        DialogGraphics.checkDialogActions(window);
+    } else {
+        // Check for info panel actions
+        InfoPanelGraphics.checkInfoPanelActions(window);
 
-    // Check for dialog actions
-    DialogGraphics.checkDialogActions(window);
-
-    // Check if is pawn promotion
-    if (CanvasUtils.isInBoard(mouseX, mouseY) && chessBoard.gameState === GAME_STATES.PLAYING) {
-        if (chessBoard.pawnToPromote) {
-            choosePromotionPiece(window);
-        } else {
-            setMovingPiece(window);
+        if (CanvasUtils.isInBoard(mouseX, mouseY) && chessBoard.gameState === GAME_STATES.PLAYING) {
+            // Check if is pawn promotion
+            if (chessBoard.pawnToPromote) {
+                choosePromotionPiece(window);
+            } else {
+                setMovingPiece(window);
+            }
         }
     }
 }
 
 export function setMovingPiece(p = window) {
     // Check if board is flipped
-    const isFlipped = !chessBoard.isWhiteTurn;
+    const isFlipped = Settings.autoFlipBoard && !chessBoard.isWhiteTurn;
     // Convert mouse position to placement
     const placement = BoardUtils.positionToPlacement(p.mouseX, p.mouseY, isFlipped);
     // Check if placement has a piece
@@ -244,7 +234,7 @@ export function choosePromotionPiece(p = window) {
     // Get pawn to promote
     const { pawnToPromote } = chessBoard;
     // Check if board is flipped
-    const isFlipped = !chessBoard.isWhiteTurn;
+    const isFlipped = Settings.autoFlipBoard && !chessBoard.isWhiteTurn;
 
     // Get piece to promote to
     const placement = BoardUtils.positionToPlacement(p.mouseX, p.mouseY, isFlipped);
@@ -274,7 +264,7 @@ function mouseReleased() {
     if (!chessBoard.movingPiece || chessBoard.pawnToPromote) return;
 
     // Check if board is flipped
-    const isFlipped = !chessBoard.isWhiteTurn;
+    const isFlipped = Settings.autoFlipBoard && !chessBoard.isWhiteTurn;
     // Get placement on board
     const newPlacement = BoardUtils.positionToPlacement(mouseX, mouseY, isFlipped);
     // Set piece to new placement
@@ -283,9 +273,13 @@ function mouseReleased() {
 
 export function setChessBoard(board) {
     chessBoard = board;
-    if (typeof process !== 'object') {
+    if (EnvironmentUtils.isBrowserEnvironment()) {
         window.chessBoard = chessBoard;
     }
+}
+
+export function setAutoFlipBoard(flipBoard) {
+    Settings.autoFlipBoard = flipBoard;
 }
 
 export function movePieceByFEN(fenMove) {
@@ -309,23 +303,23 @@ export function movePieceByFEN(fenMove) {
 }
 
 // Set global functions and export chessBoard
-if (typeof process !== 'object') {
+if (EnvironmentUtils.isBrowserEnvironment()) {
     window.preload = preload;
     window.setup = setup;
     window.draw = draw;
     window.mousePressed = mousePressed;
     window.mouseReleased = mouseReleased;
     window.movePieceByFEN = movePieceByFEN;
+    window.setAutoFlipBoard = setAutoFlipBoard;
 }
 
 /**
  * TODO:
- *  * Add check to Dialog to see if button bounding box is inside the dialog bounding box
+ *  * Add undo / redo buttons just above infopanel action buttons
  *  * Fix king not being able to take pawn attacking it
  *  * Add caching game to localStorage if available (store PGN on each move and import PGN after refresh)
  *  * Pick starting color
  *  * Add threefold move repetition check
- *  * Add settings screen
- *  * Default: Disable auto-flip board, button to enable auto flip
  *  * Add AI
+ *  * Check for p5 update to 1.4.1
  */

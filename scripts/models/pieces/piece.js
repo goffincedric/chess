@@ -1,6 +1,7 @@
 import { SQUARE_SIZE } from '../../constants/boardConstants.js';
 import { BoardUtils } from '../../utils/boardUtils.js';
 import { Placement } from '../placement.js';
+import { EnvironmentUtils } from '../../utils/environmentUtils.js';
 
 export class Piece {
     file;
@@ -29,7 +30,7 @@ export class Piece {
 
     getAssetUrl() {
         let extension = '.svg';
-        if (typeof process === 'object') {
+        if (EnvironmentUtils.isNodeEnvironment()) {
             extension = '.png';
         }
         return 'assets/' + this.fenName.toLowerCase() + '_' + (this.isWhite ? 'l' : 'd') + extension;

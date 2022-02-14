@@ -88,7 +88,9 @@ function generatePGNForMoves(moves) {
     // Convert turns to move text and return
     return FENTurns.reduce(
         (movesText, turn, index) =>
-            `${movesText}${turn.join(' ')} ${turn.length === 2 && FENTurns.length - 1 !== index || FENTurns.length - 1 !== index ? moveCount++ + '. ' : ''}`,
+            `${movesText}${turn.join(' ')} ${
+                (turn.length === 2 && FENTurns.length - 1 !== index) || FENTurns.length - 1 !== index ? moveCount++ + '. ' : ''
+            }`,
         initialMoveText,
     );
 }

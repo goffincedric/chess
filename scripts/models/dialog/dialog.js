@@ -37,6 +37,8 @@ export class Dialog {
             )
         ) {
             this.buttons.push(button);
+        } else {
+            console.warn('Button "' + button.text + '" is not in bounding box of dialog');
         }
     }
 

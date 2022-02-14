@@ -11,6 +11,7 @@ import { MAX_PIECE_COUNT, PieceTypes } from '../constants/pieceConstants.js';
 import { AssetUtils } from '../utils/assetUtils.js';
 import { CanvasUtils } from '../utils/canvasUtils.js';
 import { FENUtils } from '../utils/fenUtils.js';
+import { DialogGraphics } from './dialogGraphics.js';
 
 // Set global positions and sizes
 const textCenterX = TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH / 2;
@@ -226,9 +227,11 @@ function drawPastMoves(p, moves) {
 const infoPanelButtonListeners = [];
 const actionButtonsYOffset = pastMovesYOffset + pastMovesHeight;
 const actionButtonsHeight = SQUARE_SIZE + BOARD_OFFSET;
-let exportFENTimeoutId, exportPGNTimeoutId;
-const copiedLabel = 'Copied to clipboard';
 function drawActionButtons(p, canResign, canReset) {
+    // Check if info panel buttons can be activated
+    const canActivateButton = !DialogGraphics.isDrawingDialogs();
+
+    // Draw buttons
     const buttonWidth = INFO_PANEL_WIDTH / 2 - marginWidth * 2;
     const buttonHeight = actionButtonsHeight / 2 - marginWidth * 2;
     if (canResign) {
@@ -240,6 +243,7 @@ function drawActionButtons(p, canResign, canReset) {
             buttonWidth,
             buttonHeight,
             InfoPanelGraphics.resignGameListener,
+            canActivateButton,
         );
     }
     if (canReset) {
@@ -251,43 +255,32 @@ function drawActionButtons(p, canResign, canReset) {
             buttonWidth,
             buttonHeight,
             InfoPanelGraphics.resetGameListener,
+            canActivateButton,
         );
     }
     addButton(
         p,
-        exportFENTimeoutId ? copiedLabel : 'Export board FEN',
+        'Export game',
         TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH - marginWidth - buttonWidth,
         actionButtonsYOffset + marginWidth,
         buttonWidth,
         buttonHeight,
-        () => {
-            if (!exportFENTimeoutId) {
-                clearTimeout(exportPGNTimeoutId);
-                exportPGNTimeoutId = null;
-                exportFENTimeoutId = setTimeout(() => (exportFENTimeoutId = null), 2000);
-                InfoPanelGraphics.exportBoardLayoutListener();
-            }
-        },
+        InfoPanelGraphics.exportGameListener,
+        canActivateButton,
     );
     addButton(
         p,
-        exportPGNTimeoutId ? copiedLabel : 'Export game PGN',
+        'Settings',
         TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH - marginWidth - buttonWidth,
         TOTAL_BOARD_SIZE - marginWidth - buttonHeight,
         buttonWidth,
         buttonHeight,
-        () => {
-            if (!exportPGNTimeoutId) {
-                clearTimeout(exportFENTimeoutId);
-                exportFENTimeoutId = null;
-                exportPGNTimeoutId = setTimeout(() => (exportPGNTimeoutId = null), 2000);
-                InfoPanelGraphics.exportGameListener();
-            }
-        },
+        InfoPanelGraphics.settingsListener,
+        canActivateButton,
     );
 }
 
-function addButton(p, buttonText, x, y, width, height, clickListener) {
+function addButton(p, buttonText, x, y, width, height, clickListener, allowHover) {
     let x1 = x;
     let y1 = y;
     let x2 = x + width;
@@ -296,7 +289,7 @@ function addButton(p, buttonText, x, y, width, height, clickListener) {
     // Draw box
     p.strokeWeight(2);
     p.stroke(p.color(COLORS.DARK));
-    if (CanvasUtils.isPositionBetweenCoordinates(p.mouseX, p.mouseY, x1, y1, x2, y2)) {
+    if (allowHover && CanvasUtils.isPositionBetweenCoordinates(p.mouseX, p.mouseY, x1, y1, x2, y2)) {
         p.fill(p.color(COLORS.BUTTON_HOVER));
     } else {
         p.fill(p.color(COLORS.LIGHT));
@@ -352,7 +345,7 @@ export const InfoPanelGraphics = {
     exportGameListener: () => {
         throw new Error('No InfoPanelGraphics.exportGameListener listener was supplied');
     },
-    exportBoardLayoutListener: () => {
-        throw new Error('No InfoPanelGraphics.exportBoardListener listener was supplied');
+    settingsListener: () => {
+        throw new Error('No InfoPanelGraphics.settingsListener listener was supplied');
     },
 };
