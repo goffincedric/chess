@@ -231,8 +231,6 @@ export function setMovingPiece(p = window) {
 }
 
 export function choosePromotionPiece(p = window) {
-    // Get pawn to promote
-    const { pawnToPromote } = chessBoard;
     // Check if board is flipped
     const isFlipped = Settings.autoFlipBoard && !chessBoard.isWhiteTurn;
 
@@ -242,11 +240,8 @@ export function choosePromotionPiece(p = window) {
         chessBoard.isWhiteTurn ? PieceGraphics.pawnPromotion.whitePieces : PieceGraphics.pawnPromotion.blackPieces,
     ).find((piece) => piece.file === placement.file && piece.rank === placement.rank);
     if (chosenPiece) {
-        // Create new instance of chosen piece
-        const promotedPiece = new chosenPiece.constructor(pawnToPromote.file, pawnToPromote.rank, pawnToPromote.isWhite, false);
-
         // Promote piece
-        chessBoard.promotePawn(promotedPiece);
+        chessBoard.promotePawn(chosenPiece.constructor);
 
         // Set promotion pieces position flag to false
         PieceGraphics.pawnPromotion.hasSetPiecePositions = false;

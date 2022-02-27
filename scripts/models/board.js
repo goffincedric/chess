@@ -94,7 +94,7 @@ export class Board {
     }
 
     resignGame() {
-        chessBoard.gameState = GAME_STATES.RESIGNED;
+        this.gameState = GAME_STATES.RESIGNED;
     }
 
     movePiece(newPlacement) {
@@ -150,7 +150,7 @@ export class Board {
         this.clearMovingPiece();
     }
 
-    promotePawn(promotedToPiece) {
+    promotePawn(PieceClassConstructor) {
         // Check if last move was pawn promotion move
         const lastMove = this.pastMoves[this.pastMoves.length - 1];
         if (lastMove.isPawnPromotion) {
@@ -159,15 +159,18 @@ export class Board {
                 (piece) => piece.isWhite === this.isWhiteTurn && piece.TYPE === PieceTypes.PAWN && piece.file === piece.promotionFile,
             );
             if (pawnToPromote) {
+                // Create new instance of chosen piece class
+                const promotedPiece = new PieceClassConstructor(pawnToPromote.file, pawnToPromote.rank, pawnToPromote.isWhite, false);
+
                 // Remove pawn from game
                 const indexToRemove = this.pieces.indexOf(pawnToPromote);
                 this.pieces.splice(indexToRemove, 1);
 
                 // Add promotedToPiece to move
-                lastMove.setPawnPromotionPiece(promotedToPiece);
+                lastMove.setPawnPromotionPiece(promotedPiece);
 
                 // Add promotedToPiece to pieces
-                this.pieces.push(promotedToPiece);
+                this.pieces.push(promotedPiece);
 
                 // Clear piece to promote
                 this.pawnToPromote = null;
