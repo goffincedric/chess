@@ -299,6 +299,12 @@ export class Board {
         return this.getPlacementsBetweenAttackersAndPiece(king).length > 0;
     }
 
+    /**
+     *
+     * @param {Piece} movingPiece
+     * @param {boolean} isEnemyMoves
+     * @returns {*[]}
+     */
     getMoves(movingPiece, isEnemyMoves = false) {
         // Get possible moves
         const moves = movingPiece.getMoves();
@@ -401,6 +407,9 @@ export class Board {
                 if (this.pastMoves.length > 0) {
                     this.pastMoves[this.pastMoves.length - 1].isChecking = true;
                 }
+                if (movingPiece.file === 2 && movingPiece.TYPE === PieceTypes.BISHOP) {
+                    console.log(placementsTargetingKing, [...joinedMoves]);
+                }
                 PlacementUtils.filterPlacementsInCommon(joinedMoves, placementsTargetingKing, true);
             }
 
@@ -429,10 +438,19 @@ export class Board {
                             const piecesOnMoves = movesBetween
                                 .map((move) => PieceUtils.getPieceByPlacement(this.pieces, move.file, move.rank))
                                 .filter((piece) => !!piece);
+
                             // Check if movingPiece is the only piece between enemy
                             if (piecesOnMoves.length === 1 && piecesOnMoves.includes(movingPiece)) {
-                                // Keep only moves targeting enemy piece
-                                PlacementUtils.filterPlacementsInCommon(joinedMoves, [slidingEnemyPiece], true);
+                                // Keep only moves targeting enemy piece and in between defending piece and attacking piece
+                                const placementsBetween = PlacementUtils.generatePlacementsBetweenPlacements(
+                                    movingPiece.file,
+                                    movingPiece.rank,
+                                    slidingEnemyPiece.file,
+                                    slidingEnemyPiece.rank,
+                                    false,
+                                    true,
+                                );
+                                PlacementUtils.filterPlacementsInCommon(joinedMoves, placementsBetween, true);
                             }
                         }
                     }
