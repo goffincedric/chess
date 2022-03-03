@@ -6,10 +6,8 @@ import { PieceTypes } from '../../constants/pieceConstants.js';
 export class Pawn extends Piece {
     promotionFile;
 
-    TYPE = PieceTypes.PAWN;
-
     constructor(file, rank, isWhite, isFirstMove = true) {
-        super(file, rank, isWhite, 'p', true, isFirstMove);
+        super(file, rank, isWhite, 'p', PieceTypes.PAWN, true, isFirstMove);
         this.promotionFile = this.isWhite ? 8 : 1;
     }
 

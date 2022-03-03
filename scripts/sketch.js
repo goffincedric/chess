@@ -1,4 +1,4 @@
-import { COLORS, GAME_STATES } from './constants/boardConstants.js';
+import { COLORS } from './constants/boardConstants.js';
 import { Board } from './models/board.js';
 import { BoardUtils } from './utils/boardUtils.js';
 import { CanvasUtils } from './utils/canvasUtils.js';
@@ -19,8 +19,15 @@ import { GameExportedDialog } from './dialogs/exportGame/gameExportedDialog.js';
 import { EnvironmentUtils } from './utils/environmentUtils.js';
 import { SettingsDialog } from './dialogs/settingsDialog.js';
 import { Settings } from './config/settings.js';
+import { WebStorageConstants } from './constants/webStorageConstants.js';
+import { FENUtils } from './utils/fenUtils.js';
+import { RegexConstants } from './constants/regexConstants.js';
+import { GameConstants } from './constants/gameConstants.js';
 
 // Create chessboard variable
+/**
+ * @type {Board}
+ */
 let chessBoard;
 
 /**
@@ -28,15 +35,32 @@ let chessBoard;
  */
 // Preload data
 export function preload(p = window, board, preloadedAssets) {
-    if (!board) {
+    let importedBoard;
+    if (board) {
+        importedBoard = board;
+    } else if (EnvironmentUtils.isBrowserEnvironment()) {
+        // Check if is browser environment
+        // Check if a previously saved PGN is available
+        const savedPGN = localStorage.getItem(WebStorageConstants.SAVED_GAME_PGN);
+        if (savedPGN) {
+            // Import board from PGN
+            importedBoard = FENUtils.generateBoardFromPGN(savedPGN);
+        }
+    }
+
+    // If no board was imported, create default board
+    if (!importedBoard) {
         // Create players
         const player1 = new Player('Player 1', true);
         const player2 = new Player('Player 2', false);
         // Create chessboard
-        board = new Board(player1, player2);
+        importedBoard = new Board(player1, player2);
     }
-    setChessBoard(board);
 
+    // Set current chessboard
+    setChessBoard(importedBoard);
+
+    // Load assets
     if (!preloadedAssets) {
         // Load piece assets and store in AssetUtils
         const assetUrls = [
@@ -71,11 +95,17 @@ function initializeDialogs() {
     // Create listeners
     const resetGameListener = () => {
         chessBoard.resetGame();
-        GameEndDialog.dialog.hide();
+        localStorage.removeItem(WebStorageConstants.SAVED_GAME_PGN);
+        if (GameEndDialog.dialog.isShown) {
+            GameEndDialog.dialog.hide();
+        }
     };
     const viewBoardListener = () => {
-        chessBoard.gameState = GAME_STATES.OBSERVING;
-        GameEndDialog.dialog.hide();
+        chessBoard.gameState = GameConstants.States.OBSERVING;
+
+        if (GameEndDialog.dialog.isShown) {
+            GameEndDialog.dialog.hide();
+        }
     };
 
     // Setup game end dialog
@@ -162,7 +192,7 @@ export function draw(p = window) {
         PieceGraphics.drawPawnPromotion(p, chessBoard.pawnToPromote, chessBoard.isWhiteTurn, flipBoard);
     }
 
-    if (![GAME_STATES.PLAYING, GAME_STATES.OBSERVING].includes(chessBoard.gameState)) {
+    if (![GameConstants.States.PLAYING, GameConstants.States.OBSERVING].includes(chessBoard.gameState)) {
         GameEndDialog.updateGameEndDialogText(chessBoard.gameState, chessBoard.isWhiteTurn);
         GameEndDialog.dialog.show();
     }
@@ -187,8 +217,8 @@ function drawInfoPanelContents(p = window) {
     // Draw past moves
     InfoPanelGraphics.drawPastMoves(p, chessBoard.pastMoves);
     // Draw action buttons
-    const canResign = chessBoard.gameState === GAME_STATES.PLAYING;
-    const canReset = [GAME_STATES.PLAYING, GAME_STATES.OBSERVING].includes(chessBoard.gameState);
+    const canResign = chessBoard.gameState === GameConstants.States.PLAYING;
+    const canReset = [GameConstants.States.PLAYING, GameConstants.States.OBSERVING].includes(chessBoard.gameState);
     InfoPanelGraphics.drawActionButtons(p, canResign, canReset);
 }
 
@@ -207,7 +237,7 @@ function mousePressed() {
         // Check for info panel actions
         InfoPanelGraphics.checkInfoPanelActions(window);
 
-        if (CanvasUtils.isInBoard(mouseX, mouseY) && chessBoard.gameState === GAME_STATES.PLAYING) {
+        if (CanvasUtils.isInBoard(mouseX, mouseY) && chessBoard.gameState === GameConstants.States.PLAYING) {
             // Check if is pawn promotion
             if (chessBoard.pawnToPromote) {
                 choosePromotionPiece(window);
@@ -245,6 +275,9 @@ export function choosePromotionPiece(p = window) {
 
         // Set promotion pieces position flag to false
         PieceGraphics.pawnPromotion.hasSetPiecePositions = false;
+
+        // Save game
+        saveBoardToStorage();
     }
 }
 
@@ -264,6 +297,9 @@ function mouseReleased() {
     const newPlacement = BoardUtils.positionToPlacement(mouseX, mouseY, isFlipped);
     // Set piece to new placement
     chessBoard.movePiece(newPlacement);
+
+    // Save game
+    saveBoardToStorage();
 }
 
 export function setChessBoard(board) {
@@ -279,7 +315,7 @@ export function setAutoFlipBoard(flipBoard) {
 
 export function movePieceByFEN(fenMove) {
     const { from, to } = fenMove;
-    const FENMoveRegex = /^[A-H][1-8]$/i;
+    const FENMoveRegex = RegexConstants.FEN_MOVE;
     if (FENMoveRegex.test(from) && FENMoveRegex.test(to)) {
         // Convert fen to placements
         const fromPlacement = new Placement(+from[1], BoardUtils.rankCharToNumber(from[0]));
@@ -291,10 +327,21 @@ export function movePieceByFEN(fenMove) {
             const piece = chessBoard.getPieceByPlacement(fromPlacement.file, fromPlacement.rank);
             chessBoard.setMovingPiece(piece);
             chessBoard.movePiece(toPlacement);
+
+            // Save game
+            saveBoardToStorage();
+
             return true;
         }
     }
     return false;
+}
+
+export function saveBoardToStorage() {
+    if (EnvironmentUtils.isBrowserEnvironment()) {
+        const pgnString = chessBoard.getPGN();
+        localStorage.setItem(WebStorageConstants.SAVED_GAME_PGN, pgnString);
+    }
 }
 
 // Set global functions and export chessBoard
@@ -304,14 +351,13 @@ if (EnvironmentUtils.isBrowserEnvironment()) {
     window.draw = draw;
     window.mousePressed = mousePressed;
     window.mouseReleased = mouseReleased;
-    window.movePieceByFEN = movePieceByFEN;
     window.setAutoFlipBoard = setAutoFlipBoard;
 }
 
 /**
  * TODO:
+ *  * If a white bishops attacks a king from 3 squares away, and a black bishop in between it's king and the white bishop, it can't move along that line (it still blocks the king)
  *  * Add undo / redo buttons just above info panel action buttons
- *  * Add caching game to localStorage if available (store PGN on each move and import PGN after refresh)
  *  * Pick starting color
  *  * Add threefold move repetition check
  *  * Add AI

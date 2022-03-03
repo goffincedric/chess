@@ -5,10 +5,8 @@ import { PieceTypes } from '../../constants/pieceConstants.js';
 
 export class Bishop extends Piece {
 
-    TYPE = PieceTypes.BISHOP;
-
     constructor(file, rank, isWhite, isFirstMove = true) {
-        super(file, rank, isWhite, 'b', true, isFirstMove);
+        super(file, rank, isWhite, 'b',PieceTypes.BISHOP, true, isFirstMove);
     }
 
     getMoves() {

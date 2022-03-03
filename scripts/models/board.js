@@ -1,12 +1,13 @@
 import { MovesUtils } from '../utils/movesUtils.js';
 import { BoardUtils } from '../utils/boardUtils.js';
-import { GAME_STATES } from '../constants/boardConstants.js';
 import { PieceUtils } from '../utils/pieceUtils.js';
 import { PlacementUtils } from '../utils/placementUtils.js';
-import { DEFAULT_PIECES_LAYOUT_FEN, PieceTypes } from '../constants/pieceConstants.js';
+import { PieceTypes } from '../constants/pieceConstants.js';
 import { Placement } from './placement.js';
 import { Move } from './move.js';
 import { FENUtils } from '../utils/fenUtils.js';
+import { FENConstants } from '../constants/fenConstants.js';
+import { GameConstants } from '../constants/gameConstants.js';
 
 export class Board {
     players;
@@ -18,14 +19,29 @@ export class Board {
     movingPiece;
     movingPieceMoves;
 
+    /**
+     * @type {boolean}
+     */
     isWhiteTurn;
     pawnToPromote;
 
+    /**
+     * @type {Move[]}
+     */
     pastMoves;
 
+    /**
+     * @type {Move[]}
+     */
     enemyAttacks = [];
+    /**
+     * @type {Move[]}
+     */
     currentPlayerMoves = [];
 
+    /**
+     * @type {string}
+     */
     gameState;
 
     // Variable that holds the amount of half moves made since last capture, for 50-move rule
@@ -46,12 +62,12 @@ export class Board {
         this.enemyAttacks = this.getEnemyAttacks();
 
         // Set game state to playing
-        this.gameState = GAME_STATES.PLAYING;
+        this.gameState = GameConstants.States.PLAYING;
     }
 
     initializePieces(initialFENString) {
         // Set FEN string to standard if not defined
-        this.initialFENString = initialFENString ?? DEFAULT_PIECES_LAYOUT_FEN;
+        this.initialFENString = initialFENString ?? FENConstants.DEFAULT_FEN_LAYOUT;
 
         // Set standard board
         this.movingPiece = null;
@@ -61,7 +77,7 @@ export class Board {
         this.currentPlayerMoves = [];
 
         // Initialize with FEN notation
-        const boardData = FENUtils.generateBoardFromFen(this.initialFENString);
+        const boardData = FENUtils.generateBoardFromFEN(this.initialFENString);
         this.pieces = boardData.pieces;
         this.isWhiteTurn = boardData.isWhiteTurn;
         this.halfMovesCount = boardData.halfMoveCount;
@@ -94,7 +110,7 @@ export class Board {
     }
 
     resignGame() {
-        this.gameState = GAME_STATES.RESIGNED;
+        this.gameState = GameConstants.States.RESIGNED;
     }
 
     movePiece(newPlacement) {
@@ -201,7 +217,7 @@ export class Board {
 
         // Look for draw
         if (this.isDrawInsufficientPieces()) {
-            this.gameState = GAME_STATES.DRAW_INSUFFICIENT_PIECES;
+            this.gameState = GameConstants.States.DRAW_INSUFFICIENT_PIECES;
         } else if (this.isThreeFoldRepetition()) {
             // TODO: Fix threefold repetition. First, implement resignations
             console.log(`Stalemate, the same move was played three times.`);
@@ -210,10 +226,10 @@ export class Board {
             const lastMove = this.pastMoves[this.pastMoves.length - 1];
             lastMove.isChecking = false;
             lastMove.isCheckMating = true;
-            this.gameState = GAME_STATES.CHECKMATE;
+            this.gameState = GameConstants.States.CHECKMATE;
         } else if (this.isStaleMate()) {
             // Look for stalemate
-            this.gameState = GAME_STATES.DRAW_STALEMATE;
+            this.gameState = GameConstants.States.DRAW_STALEMATE;
         }
     }
 
@@ -558,5 +574,16 @@ export class Board {
         const whitePlayer = this.players.find((player) => player.isWhite);
         const blackPlayer = this.players.find((player) => !player.isWhite);
         return `${whitePlayer.name} VS ${blackPlayer.name}`;
+    }
+
+    getPGN(siteName = null) {
+        return FENUtils.generatePGNFromBoard(
+            this.getGameName(),
+            siteName,
+            this.initialFENString,
+            this.players,
+            this.pastMoves,
+            this.gameState,
+        );
     }
 }

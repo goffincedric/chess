@@ -1,0 +1,9 @@
+[Event "Player 1 VS Player 2"]
+[Site "chess.goffincedric.be"]
+[Date "2022.3.2"]
+[FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"]
+[White "Player 1"]
+[Black "Player 2"]
+[Result "0-1"]
+
+1. e2e4 d7d5 2. f2f4 e7e5 3. Qd1h5 Qd8h4+ 4. Ke1e2 Qh4xh5+ 5. Ng1f3 Qh5xf3+ 6. Ke2xf3 d5xe4+ 7. Kf3xe4 e5xf4 8. Ke4xf4 Ng8f6 9. Bf1b5+ Bc8d7 10. Nb1c3 Nf6d5+ 11. Kf4f3 Nd5f4 12. Kf3f2 Nf4h3+ 13. Kf2e1 Nh3g1 14. Ke1d1 Nb8c6 15. Bb5d3 Nc6d4 16. Bd3f5 Nd4xc2 17. Nc3d5 Bd7xf5 18. Nd5b6 a7a5 19. Nb6c4 Ra8a6 20. Nc4d6+ Ke8d7 21. Nd6e8 Ra6c6 22. Ne8xc7 Bf5g4#  0-1

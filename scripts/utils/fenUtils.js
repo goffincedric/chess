@@ -1,57 +1,19 @@
-import { FILES, GAME_STATES, RANKS } from '../constants/boardConstants.js';
+import { FILES, RANKS } from '../constants/boardConstants.js';
 import { PieceUtils } from './pieceUtils.js';
 import { Bishop, King, Knight, Pawn, Queen, Rook } from '../models/pieces/index.js';
 import { BoardUtils } from './boardUtils.js';
 import { Move } from '../models/move.js';
 import { PieceTypes } from '../constants/pieceConstants.js';
-
-function generateFenForMove(move) {
-    // Check if move is defined
-    if (!move) return null;
-
-    // Generate move notation
-    let moveNotation = '';
-    if (move.castlingMove) {
-        if (move.castlingMove.movingPiece.rank < move.movingPiece.rank) {
-            // Castling kingside
-            moveNotation = 'O-O-O';
-        } else {
-            // Castling queenside
-            moveNotation = 'O-O';
-        }
-    } else {
-        const pieceNotation = move.movingPiece.TYPE !== PieceTypes.PAWN ? move.movingPiece.fenName.toUpperCase() : '';
-        const captureNotation = move.attackedPiece ? 'x' : '';
-        const rankFromNotation = BoardUtils.rankNumberToChar(move.movingPiece.rank).toLowerCase();
-        const fileFromNotation = `${move.movingPiece.file}`;
-        const rankToNotation = BoardUtils.rankNumberToChar(move.rank).toLowerCase();
-        const fileToNotation = `${move.file}`;
-        moveNotation = `${pieceNotation}${rankFromNotation}${fileFromNotation}${captureNotation}${rankToNotation}${fileToNotation}`;
-    }
-
-    // Check if is pawn promotion
-    if (move.isPawnPromotion && move.promotedToPiece) {
-        moveNotation += `=${move.promotedToPiece.fenName}`;
-    }
-
-    // Check if is checking or checmmating move
-    if (move.isChecking) {
-        moveNotation += '+';
-    } else if (move.isCheckMating) {
-        moveNotation += '#';
-    }
-
-    // Return move
-    return moveNotation;
-}
-
-function generateFenForMoves(moves) {
-    return moves.map((move) => generateFenForMove(move));
-}
+import { RegexConstants } from '../constants/regexConstants.js';
+import { FENConstants } from '../constants/fenConstants.js';
+import { Player } from '../models/player.js';
+import { Board } from '../models/board.js';
+import { Placement } from '../models/placement.js';
+import { GameConstants } from '../constants/gameConstants.js';
 
 function generatePGNForMoves(moves) {
     // Convert moves to FEN notation
-    const FENMoves = generateFenForMoves(moves);
+    const FENMoves = generateFENForMoves(moves);
 
     // Group moves in turns
     let FENTurns = FENMoves.reduce((turns, move) => {
@@ -76,7 +38,7 @@ function generatePGNForMoves(moves) {
     });
 
     // Check if black started first move
-    let initialMoveText = '';
+    let initialMoveText;
     let firstMove = moves.find((move) => !!move);
     if (firstMove?.movingPiece.isWhite === false) {
         const firstFENTurn = FENTurns.shift()[0];
@@ -101,17 +63,18 @@ function generatePGNFromBoard(gameName, site, initialFENString, players, moves, 
     const date = new Date();
     let result;
     switch (gameState) {
-        case GAME_STATES.DRAW_INSUFFICIENT_PIECES:
-        case GAME_STATES.DRAW_STALEMATE:
+        case GameConstants.States.DRAW_CALLED:
+        case GameConstants.States.DRAW_INSUFFICIENT_PIECES:
+        case GameConstants.States.DRAW_STALEMATE:
             result = '1/2-1/2';
             break;
-        case GAME_STATES.OBSERVING:
-        case GAME_STATES.CHECKMATE:
-        case GAME_STATES.RESIGNED:
+        case GameConstants.States.OBSERVING:
+        case GameConstants.States.CHECKMATE:
+        case GameConstants.States.RESIGNED:
             const whiteWon = moves.length % 2 === 1;
             result = whiteWon ? '1-0' : '0-1';
             break;
-        case GAME_STATES.PLAYING:
+        case GameConstants.States.PLAYING:
         default:
             result = '*';
             break;
@@ -133,7 +96,195 @@ function generatePGNFromBoard(gameName, site, initialFENString, players, moves, 
     return tags.join('\n') + '\n\n' + moveText;
 }
 
-function generateFenFromBoard(pieces, isWhiteTurn, halfMoveCount, currentPlayerMoves, pastMoves) {
+function generateBoardFromPGN(pgnString) {
+    // Set up regexes
+    const commentRegex = /{[^}]+}/g;
+    // Split text in lines
+    const lines = pgnString
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '');
+    // Get lines containing tags
+    const tagLines = lines.filter((line) => isValidPGNTag(line));
+    // Get lines containing move text and remove comments
+    const startMoveTextIndex = lines.indexOf(tagLines[tagLines.length - 1]) + 1;
+    let moveText = lines.slice(startMoveTextIndex).join(' ');
+    moveText = moveText.replaceAll(commentRegex, '');
+
+    // Get info from tags
+    let fen = FENConstants.DEFAULT_FEN_LAYOUT;
+    let whiteName = 'Player 1';
+    let blackName = 'Player 2';
+    tagLines.forEach((line) => {
+        const regexMatch = line.match(RegexConstants.PGN_TAG);
+        switch (regexMatch.groups.name.toLowerCase()) {
+            case 'fen':
+                if (isValidFEN(regexMatch.groups.value)) {
+                    fen = regexMatch.groups.value;
+                }
+                break;
+            case 'white':
+                whiteName = regexMatch.groups.value;
+                break;
+            case 'black':
+                blackName = regexMatch.groups.value;
+                break;
+        }
+    });
+
+    // Generate board from FEN layout
+    const whitePlayer = new Player(whiteName, true);
+    const blackPlayer = new Player(blackName, false);
+    const board = new Board(whitePlayer, blackPlayer, fen);
+
+    function getMoveDataFromPGNRegexData(from, to, kingCastle, queenCastle, fenName) {
+        // Get piece to move
+        let placementToMoveTo;
+        let pieceToMove;
+        let foundMove;
+        if (to) {
+            let placementToMoveFrom;
+            // Convert fen to placements
+            placementToMoveTo = new Placement(+to[1], BoardUtils.rankCharToNumber(to[0]));
+            if (from?.length > 0) {
+                let file, rank;
+                // Check if first character is a number
+                if (!isNaN(+from[0])) {
+                    // Set file to number
+                    file = +from[0];
+                } else {
+                    // Set rank to character
+                    rank = from[0];
+                    // Check if second character is a number
+                    if (!isNaN(+from[1])) {
+                        // Set file to second character
+                        file = +from[1];
+                    }
+                }
+                placementToMoveFrom = new Placement(file, BoardUtils.rankCharToNumber(rank));
+            }
+
+            // Find move to get piece of
+            foundMove = board.currentPlayerMoves.find(
+                (move) =>
+                    ((!fenName && move.movingPiece.TYPE === PieceTypes.PAWN) || // Filter for pawns if no fenName is supplied
+                        (fenName && move.movingPiece.fenName.toUpperCase() === fenName.toUpperCase())) && // Filter for pieces with same fenName if present
+                    move.file === placementToMoveTo.file && // Filter by file to move to
+                    move.rank === placementToMoveTo.rank && // Filter by rank to move to
+                    (!placementToMoveFrom || // Filter by placement to move from if present
+                        move.movingPiece.file === placementToMoveFrom.file ||
+                        move.movingPiece.rank === placementToMoveFrom.rank),
+            );
+        } else if (kingCastle) {
+            // Find king side castling move
+            foundMove = board.currentPlayerMoves.find(
+                (move) => move.castlingMove && move.movingPiece.rank < move.castlingMove.movingPiece.rank,
+            );
+        } else if (queenCastle) {
+            // Find queen side castling move
+            foundMove = board.currentPlayerMoves.find(
+                (move) => move.castlingMove && move.movingPiece.rank > move.castlingMove.movingPiece.rank,
+            );
+        }
+
+        // Get piece to move from board
+        placementToMoveTo = new Placement(foundMove.file, foundMove.rank);
+        pieceToMove = board.getPieceByPlacement(foundMove.movingPiece.file, foundMove.movingPiece.rank);
+
+        // Return piece to move and placement to move to
+        return { piece: pieceToMove, placementToMoveTo };
+    }
+
+    // Generate turns from PGN move text
+    const moveTextTurns = moveText.matchAll(RegexConstants.PGN_MOVETEXT);
+    for (let result of moveTextTurns) {
+        // Get each side's move from turn
+        if (result?.groups && board.gameState === GameConstants.States.PLAYING) {
+            // Execute white move
+            if (result.groups.whiteMove) {
+                const { piece: whitePiece, placementToMoveTo: placementToMoveWhiteTo } = getMoveDataFromPGNRegexData(
+                    result.groups.whiteFrom,
+                    result.groups.whiteTo,
+                    result.groups.whiteKingCastle,
+                    result.groups.whiteQueenCastle,
+                    result.groups.whitePiece,
+                );
+                board.setMovingPiece(whitePiece);
+                board.movePiece(placementToMoveWhiteTo);
+            }
+
+            // Execute black move
+            if (result.groups.blackMove) {
+                const { piece: blackPiece, placementToMoveTo: placementToMoveBlackTo } = getMoveDataFromPGNRegexData(
+                    result.groups.blackFrom,
+                    result.groups.blackTo,
+                    result.groups.blackKingCastle,
+                    result.groups.blackQueenCastle,
+                    result.groups.blackPiece,
+                );
+                board.setMovingPiece(blackPiece);
+                board.movePiece(placementToMoveBlackTo);
+            }
+
+            // Check for game state
+            if (result.groups.gameResult === GameConstants.Results.DRAW) {
+                board.gameState = GameConstants.States.DRAW_CALLED;
+            }
+        }
+    }
+
+    return board;
+}
+
+function isValidPGNTag(tag) {
+    return RegexConstants.PGN_TAG.test(tag);
+}
+
+function generateFENForMove(move) {
+    // Check if move is defined
+    if (!move) return null;
+
+    // Generate move notation
+    let moveNotation;
+    if (move.castlingMove) {
+        if (move.castlingMove.movingPiece.rank < move.movingPiece.rank) {
+            // Castling queen side
+            moveNotation = FENConstants.QUEEN_SIDE_CASTLE_NOTATION;
+        } else {
+            // Castling queen side
+            moveNotation = FENConstants.KING_SIDE_CASTLE_NOTATION;
+        }
+    } else {
+        const pieceNotation = move.movingPiece.TYPE !== PieceTypes.PAWN ? move.movingPiece.fenName.toUpperCase() : '';
+        const captureNotation = move.attackedPiece ? 'x' : '';
+        const rankFromNotation = BoardUtils.rankNumberToChar(move.movingPiece.rank).toLowerCase();
+        const fileFromNotation = `${move.movingPiece.file}`;
+        const rankToNotation = BoardUtils.rankNumberToChar(move.rank).toLowerCase();
+        const fileToNotation = `${move.file}`;
+        moveNotation = `${pieceNotation}${rankFromNotation}${fileFromNotation}${captureNotation}${rankToNotation}${fileToNotation}`;
+    }
+
+    // Check if is pawn promotion
+    if (move.isPawnPromotion && move.promotedToPiece) {
+        moveNotation += `=${move.promotedToPiece.fenName}`;
+    }
+
+    // Check if is checking or checkmating move
+    if (move.isChecking) {
+        moveNotation += '+';
+    } else if (move.isCheckMating) {
+        moveNotation += '#';
+    }
+
+    // Return move
+    return moveNotation;
+}
+
+function generateFENForMoves(moves) {
+    return moves.map((move) => generateFENForMove(move));
+}
+
+function generateFENFromBoard(pieces, isWhiteTurn, halfMoveCount, currentPlayerMoves, pastMoves) {
     // FEN string variable
     let fenString = '';
     let foundPiece,
@@ -197,23 +348,21 @@ function generateFenFromBoard(pieces, isWhiteTurn, halfMoveCount, currentPlayerM
     return fenString;
 }
 
-const FENStringRegex =
-    /^(?<piecePlacement>([pnbrqkPNBRQK1-8]{1,8}\/?){8})\s+(?<sideToMove>[bw])\s?(?<castling>-|K?Q?k?q?)\s+(?<enPassant>-|[a-h][3-6])\s+(?<halfMoveCount>\d+)\s+(?<fullMoveCount>\d+)\s*$/;
 // Example: rnbqkbnr/pp2pppp/2p5/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 5
-function generateBoardFromFen(fenString) {
+function generateBoardFromFEN(fenString) {
     // Parse FEN string
-    const result = FENStringRegex.exec(fenString);
-    if (!result?.groups) {
+    const regexMatch = RegexConstants.FEN_STRING.exec(fenString);
+    if (!regexMatch?.groups) {
         throw Error('Invalid FEN string: ' + fenString);
     }
-    const { groups } = result;
+    const groups = regexMatch.groups;
 
     // Get current turn
     const isWhiteTurn = groups.sideToMove.toLowerCase() === 'w';
     // Get halfMoveCount
-    const { halfMoveCount } = groups;
+    const halfMoveCount = +groups?.halfMoveCount;
     // Get fullMoveCount
-    const { fullMoveCount } = groups;
+    const fullMoveCount = +groups?.fullMoveCount;
 
     // Get castling possibilities
     const canWhiteCastleQueenSide = groups.castling.includes('Q');
@@ -306,11 +455,17 @@ function generateBoardFromFen(fenString) {
     };
 }
 
+function isValidFEN(fenString) {
+    return RegexConstants.FEN_STRING.test(fenString);
+}
+
 export const FENUtils = {
-    generateFenFromBoard,
-    generateBoardFromFen,
-    generateFenForMove,
-    generateFenForMoves,
     generatePGNForMoves,
     generatePGNFromBoard,
+    generateBoardFromPGN,
+    generateFENForMove,
+    generateFENForMoves,
+    generateFENFromBoard,
+    generateBoardFromFEN,
+    isValidFEN,
 };

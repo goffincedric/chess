@@ -27,8 +27,11 @@ function placementToPosition(file, rank, isFlipped) {
 }
 
 function rankCharToNumber(rankChar) {
-    const upperCaseRank = rankChar.toUpperCase();
-    return upperCaseRank.charCodeAt(0) - 64;
+    if (rankChar) {
+        const upperCaseRank = rankChar.toUpperCase();
+        return upperCaseRank.charCodeAt(0) - 64;
+    }
+    return null;
 }
 
 function rankNumberToChar(rankNumber) {

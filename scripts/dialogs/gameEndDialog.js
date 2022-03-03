@@ -2,8 +2,8 @@ import { DialogButton } from '../models/dialog/dialogButton.js';
 import { Dialog } from '../models/dialog/dialog.js';
 import { DialogConstants } from '../constants/dialogConstants.js';
 import { FunctionUtils } from '../utils/functionUtils.js';
-import { GAME_STATES } from '../constants/boardConstants.js';
 import { DialogLabel } from '../models/dialog/dialogLabel.js';
+import { GameConstants } from '../constants/gameConstants.js';
 
 // Create view board button
 const viewBoardButton = new DialogButton(
@@ -32,18 +32,27 @@ const gameEndDialog = new Dialog(
 function updateGameEndDialogText(gameState, isWhiteTurn) {
     // Define what text to show
     switch (gameState) {
-        case GAME_STATES.CHECKMATE:
+        case GameConstants.States.CHECKMATE:
             gameEndDialog.title.text = 'Checkmate!';
             gameEndDialog.description.text = `Checkmate, ${isWhiteTurn ? 'black' : 'white'} is victorious.`;
             break;
-        case GAME_STATES.DRAW_STALEMATE:
-        case GAME_STATES.DRAW_INSUFFICIENT_PIECES:
+        case GameConstants.States.DRAW_CALLED:
+        case GameConstants.States.DRAW_STALEMATE:
+        case GameConstants.States.DRAW_INSUFFICIENT_PIECES:
             gameEndDialog.title.text = "It's a draw!";
-            if (gameState === GAME_STATES.DRAW_STALEMATE)
-                gameEndDialog.description.text = `Stalemate, ${isWhiteTurn ? 'black' : 'white'} can't play any more moves.`;
-            else gameEndDialog.description.text = "Insufficient pieces to finish the game, it's a draw!";
+            switch (gameState) {
+                case GameConstants.States.DRAW_STALEMATE:
+                    gameEndDialog.description.text = `Stalemate, ${isWhiteTurn ? 'black' : 'white'} can't play any more moves.`;
+                    break;
+                case GameConstants.States.DRAW_INSUFFICIENT_PIECES:
+                    gameEndDialog.description.text = "Insufficient pieces to finish the game, it's a draw!";
+                    break;
+                case GameConstants.States.DRAW_CALLED:
+                    gameEndDialog.description.text = "Both players agreed to a draw!";
+                    break;
+            }
             break;
-        case GAME_STATES.RESIGNED:
+        case GameConstants.States.RESIGNED:
             gameEndDialog.title.text = `${isWhiteTurn ? 'White' : 'Black'} resigned!`;
             gameEndDialog.description.text = `${isWhiteTurn ? 'White' : 'Black'} resigned, ${
                 isWhiteTurn ? 'black' : 'white'

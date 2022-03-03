@@ -13,6 +13,9 @@ export class Move extends Placement {
     _promotedToPiece;
     _castlingMove;
 
+    /**
+     * @returns {Piece}
+     */
     get movingPiece() {
         return this._movingPiece;
     }
@@ -21,6 +24,9 @@ export class Move extends Placement {
         this._movingPiece = JSON.parse(JSON.stringify(piece));
     }
 
+    /**
+     * @returns {Piece}
+     */
     get attackedPiece() {
         return this._attackedPiece;
     }
@@ -29,6 +35,9 @@ export class Move extends Placement {
         this._attackedPiece = JSON.parse(JSON.stringify(piece));
     }
 
+    /**
+     * @returns {Move}
+     */
     get castlingMove() {
         return this._castlingMove;
     }

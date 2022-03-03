@@ -6,10 +6,8 @@ import { PieceTypes } from '../../constants/pieceConstants.js';
 
 export class Knight extends Piece {
 
-    TYPE = PieceTypes.KNIGHT;
-
     constructor(file, rank, isWhite, isFirstMove = true) {
-        super(file, rank, isWhite, 'n', false, isFirstMove);
+        super(file, rank, isWhite, 'n', PieceTypes.KNIGHT, false, isFirstMove);
     }
 
     getMoves() {

@@ -4,6 +4,8 @@ import { Placement } from '../placement.js';
 import { EnvironmentUtils } from '../../utils/environmentUtils.js';
 
 export class Piece {
+    TYPE;
+
     file;
     rank;
     isWhite;
@@ -13,11 +15,12 @@ export class Piece {
     isMoving;
     isFirstMove;
 
-    constructor(file, rank, isWhite, fenName, isSlidingPiece, isFirstMove = true) {
+    constructor(file, rank, isWhite, fenName, pieceType, isSlidingPiece, isFirstMove = true) {
         this.file = file;
         this.rank = rank;
         this.isWhite = isWhite;
         this.fenName = isWhite ? fenName.toUpperCase() : fenName.toLowerCase();
+        this.TYPE = pieceType;
         this.isSlidingPiece = isSlidingPiece;
 
         this.isFirstMove = isFirstMove;
