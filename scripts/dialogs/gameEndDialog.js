@@ -48,7 +48,7 @@ function updateGameEndDialogText(gameState, isWhiteTurn) {
                     gameEndDialog.description.text = "Insufficient pieces to finish the game, it's a draw!";
                     break;
                 case GameConstants.States.DRAW_CALLED:
-                    gameEndDialog.description.text = "Both players agreed to a draw!";
+                    gameEndDialog.description.text = 'Both players agreed to a draw!';
                     break;
             }
             break;

@@ -201,7 +201,7 @@ function generateBoardFromPGN(pgnString) {
         // Get each side's move from turn
         if (result?.groups && board.gameState === GameConstants.States.PLAYING) {
             // Execute white move
-            if (result.groups.whiteMove) {
+            if (result.groups.whiteMove?.trim()) {
                 const { piece: whitePiece, placementToMoveTo: placementToMoveWhiteTo } = getMoveDataFromPGNRegexData(
                     result.groups.whiteFrom,
                     result.groups.whiteTo,
@@ -214,7 +214,7 @@ function generateBoardFromPGN(pgnString) {
             }
 
             // Execute black move
-            if (result.groups.blackMove) {
+            if (result.groups.blackMove?.trim()) {
                 const { piece: blackPiece, placementToMoveTo: placementToMoveBlackTo } = getMoveDataFromPGNRegexData(
                     result.groups.blackFrom,
                     result.groups.blackTo,
