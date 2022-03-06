@@ -17,7 +17,7 @@ import { GameEndDialog } from './dialogs/gameEndDialog.js';
 import { ExportGameDialog } from './dialogs/exportGame/exportGameDialog.js';
 import { GameExportedDialog } from './dialogs/exportGame/gameExportedDialog.js';
 import { EnvironmentUtils } from './utils/environmentUtils.js';
-import { SettingsDialog } from './dialogs/settingsDialog.js';
+import { SettingsDialog } from './dialogs/settings/settingsDialog.js';
 import { Settings } from './config/settings.js';
 import { WebStorageConstants } from './constants/webStorageConstants.js';
 import { FENUtils } from './utils/fenUtils.js';
@@ -137,7 +137,7 @@ export function setup(p = window, loops = true) {
     const canvas = p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Check if board needs to be flipped
-    const flipBoard = Settings.autoFlipBoard && !chessBoard.isWhiteTurn;
+    const flipBoard = Settings.getSetting(Settings.Names.AutoFlipBoard) && !chessBoard.isWhiteTurn;
 
     // Draw border
     BoardGraphics.drawBorder(p, flipBoard);
@@ -161,7 +161,7 @@ export function setup(p = window, loops = true) {
 // Canvas update function
 export function draw(p = window) {
     // Check if board needs to be flipped
-    const flipBoard = Settings.autoFlipBoard && !chessBoard.isWhiteTurn;
+    const flipBoard = Settings.getSetting(Settings.Names.AutoFlipBoard) && !chessBoard.isWhiteTurn;
 
     // Clear canvas
     p.clear();
@@ -250,7 +250,7 @@ function mousePressed() {
 
 export function setMovingPiece(p = window) {
     // Check if board is flipped
-    const isFlipped = Settings.autoFlipBoard && !chessBoard.isWhiteTurn;
+    const isFlipped = Settings.getSetting(Settings.Names.AutoFlipBoard) && !chessBoard.isWhiteTurn;
     // Convert mouse position to placement
     const placement = BoardUtils.positionToPlacement(p.mouseX, p.mouseY, isFlipped);
     // Check if placement has a piece
@@ -262,7 +262,7 @@ export function setMovingPiece(p = window) {
 
 export function choosePromotionPiece(p = window) {
     // Check if board is flipped
-    const isFlipped = Settings.autoFlipBoard && !chessBoard.isWhiteTurn;
+    const isFlipped = Settings.getSetting(Settings.Names.AutoFlipBoard) && !chessBoard.isWhiteTurn;
 
     // Get piece to promote to
     const placement = BoardUtils.positionToPlacement(p.mouseX, p.mouseY, isFlipped);
@@ -292,7 +292,7 @@ function mouseReleased() {
     if (!chessBoard.movingPiece || chessBoard.pawnToPromote) return;
 
     // Check if board is flipped
-    const isFlipped = Settings.autoFlipBoard && !chessBoard.isWhiteTurn;
+    const isFlipped = Settings.getSetting(Settings.Names.AutoFlipBoard) && !chessBoard.isWhiteTurn;
     // Get placement on board
     const newPlacement = BoardUtils.positionToPlacement(mouseX, mouseY, isFlipped);
     // Set piece to new placement
@@ -310,7 +310,7 @@ export function setChessBoard(board) {
 }
 
 export function setAutoFlipBoard(flipBoard) {
-    Settings.autoFlipBoard = flipBoard;
+    Settings.setSetting(Settings.Names.AutoFlipBoard, flipBoard);
 }
 
 export function movePieceByFEN(fenMove) {

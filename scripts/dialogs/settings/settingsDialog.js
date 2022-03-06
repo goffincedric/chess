@@ -1,11 +1,12 @@
-import { DialogButton } from '../models/dialog/dialogButton.js';
-import { Dialog } from '../models/dialog/dialog.js';
-import { DialogConstants } from '../constants/dialogConstants.js';
-import { DialogLabel } from '../models/dialog/dialogLabel.js';
-import { BoundingBox } from '../models/boundingBox.js';
-import { Position } from '../models/position.js';
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../constants/canvasConstants.js';
-import { Settings } from '../config/settings.js';
+import { DialogButton } from '../../models/dialog/dialogButton.js';
+import { Dialog } from '../../models/dialog/dialog.js';
+import { DialogConstants } from '../../constants/dialogConstants.js';
+import { DialogLabel } from '../../models/dialog/dialogLabel.js';
+import { BoundingBox } from '../../models/boundingBox.js';
+import { Position } from '../../models/position.js';
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../../constants/canvasConstants.js';
+import { createAutoFlipBoardButton } from './buttons/autoflipBoardButton.js';
+import { createEnableMoveUndoButton } from './buttons/enableMoveUndoButton.js';
 
 // Set dialog position variables
 const dialogWidth = 600;
@@ -18,8 +19,22 @@ const dialogBorderOffset = 50;
 const dialogTitleSize = 32;
 
 // Default setting button variables
-const buttonWidth = dialogWidth / 2 - dialogBorderOffset * 2;
+const buttonWidth = (dialogWidth - dialogBorderOffset * 3) / 2;
 const buttonLeftX = dialogBoundingBox.x1 + dialogBorderOffset;
+
+// Create buttons
+const autoFlipBoardButton = createAutoFlipBoardButton(
+    buttonLeftX,
+    dialogBoundingBox.y1 + dialogBorderOffset + dialogTitleSize,
+    buttonWidth,
+    DialogConstants.DEFAULT_DIALOG.BUTTON_HEIGHT,
+);
+const enableMoveUndoButton = createEnableMoveUndoButton(
+    buttonLeftX + buttonWidth + dialogBorderOffset,
+    dialogBoundingBox.y1 + dialogBorderOffset + dialogTitleSize,
+    buttonWidth,
+    DialogConstants.DEFAULT_DIALOG.BUTTON_HEIGHT,
+);
 
 // Create close dialog button
 const closeAction = () => {
@@ -40,29 +55,10 @@ const closeDialogButton = new DialogButton(
     closeAction,
 );
 
-// Create auto flip board button
-const autoFlipBoardButtonPosition = new Position(buttonLeftX, dialogBoundingBox.y1 + dialogBorderOffset + dialogTitleSize);
-const getAutoFlipButtonText = () => `Auto-flip board: ${Settings.autoFlipBoard ? 'On' : 'Off'}`;
-const autoFlipBoardButton = new DialogButton(
-    getAutoFlipButtonText(),
-    new BoundingBox(
-        autoFlipBoardButtonPosition,
-        new Position(
-            autoFlipBoardButtonPosition.x + buttonWidth,
-            autoFlipBoardButtonPosition.y + DialogConstants.DEFAULT_DIALOG.BUTTON_HEIGHT,
-        ),
-    ),
-    DialogConstants.DEFAULT_DIALOG.BUTTON_TEXT_SIZE,
-);
-const autoFlipBoardAction = () => {
-    Settings.autoFlipBoard = !Settings.autoFlipBoard;
-    autoFlipBoardButton.text = getAutoFlipButtonText();
-};
-autoFlipBoardButton.action = autoFlipBoardAction;
-
 // Create settings dialog
 const settingsDialog = new Dialog(new DialogLabel('Settings', dialogTitleSize), null, dialogBoundingBox, [
     autoFlipBoardButton,
+    enableMoveUndoButton,
     closeDialogButton,
 ]);
 
