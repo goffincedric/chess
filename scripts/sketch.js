@@ -14,8 +14,8 @@ import { Placement } from './models/placement.js';
 import { MovesUtils } from './utils/movesUtils.js';
 import { DialogGraphics } from './graphics/dialogGraphics.js';
 import { GameEndDialog } from './dialogs/gameEndDialog.js';
-import { ExportGameDialog } from './dialogs/exportGame/exportGameDialog.js';
-import { GameExportedDialog } from './dialogs/exportGame/gameExportedDialog.js';
+import { ExportGameDialog } from './dialogs/gameOptions/exportGame/exportGameDialog.js';
+import { GameExportedDialog } from './dialogs/gameOptions/exportGame/gameExportedDialog.js';
 import { EnvironmentUtils } from './utils/environmentUtils.js';
 import { SettingsDialog } from './dialogs/settings/settingsDialog.js';
 import { Settings } from './config/settings.js';
@@ -23,6 +23,8 @@ import { WebStorageConstants } from './constants/webStorageConstants.js';
 import { FENUtils } from './utils/fenUtils.js';
 import { RegexConstants } from './constants/regexConstants.js';
 import { GameConstants } from './constants/gameConstants.js';
+import { GameOptionsDialog } from './dialogs/gameOptions/gameOptionsDialog.js';
+import { FunctionUtils } from './utils/functionUtils.js';
 
 // Create chessboard variable
 /**
@@ -92,27 +94,8 @@ export function preload(p = window, board, preloadedAssets) {
 }
 
 function initializeDialogs() {
-    // Create listeners
-    const resetGameListener = () => {
-        chessBoard.resetGame();
-        localStorage.removeItem(WebStorageConstants.SAVED_GAME_PGN);
-        if (GameEndDialog.dialog.isShown) {
-            GameEndDialog.dialog.hide();
-        }
-    };
-    const viewBoardListener = () => {
-        chessBoard.gameState = GameConstants.States.OBSERVING;
-
-        if (GameEndDialog.dialog.isShown) {
-            GameEndDialog.dialog.hide();
-        }
-    };
-
-    // Setup game end dialog
-    GameEndDialog.buttons.resetGameButton.action = resetGameListener;
-    GameEndDialog.buttons.viewBoardButton.action = viewBoardListener;
-
-    // Add initialized dialogs to DialogGraphics
+    // Add dialogs to DialogGraphics
+    DialogGraphics.addDialog(GameOptionsDialog.dialog);
     DialogGraphics.addDialog(ExportGameDialog.dialog);
     DialogGraphics.addDialog(GameExportedDialog.dialog);
     DialogGraphics.addDialog(SettingsDialog.dialog);
@@ -120,15 +103,11 @@ function initializeDialogs() {
 }
 
 function initializeInfoPanelButtons() {
-    // Create listeners
-    const resetGameListener = () => chessBoard.resetGame();
-    const resignGameListener = () => chessBoard.resignGame();
-
     // Set info panel button listeners
-    InfoPanelGraphics.resetGameListener = resetGameListener;
-    InfoPanelGraphics.resignGameListener = resignGameListener;
-    InfoPanelGraphics.exportGameListener = () => ExportGameDialog.dialog.show();
-    InfoPanelGraphics.settingsListener = () => SettingsDialog.dialog.show();
+    InfoPanelGraphics.resignGameListener = () => chessBoard.resignGame();
+    InfoPanelGraphics.showGameOptionsListener = () => GameOptionsDialog.dialog.show();
+    InfoPanelGraphics.undoMoveListener = FunctionUtils.noOp; // TODO
+    InfoPanelGraphics.showSettingsListener = () => SettingsDialog.dialog.show();
 }
 
 // Canvas initialization function, called once at start
@@ -218,8 +197,8 @@ function drawInfoPanelContents(p = window) {
     InfoPanelGraphics.drawPastMoves(p, chessBoard.pastMoves);
     // Draw action buttons
     const canResign = chessBoard.gameState === GameConstants.States.PLAYING;
-    const canReset = [GameConstants.States.PLAYING, GameConstants.States.OBSERVING].includes(chessBoard.gameState);
-    InfoPanelGraphics.drawActionButtons(p, canResign, canReset);
+    const canUndo = chessBoard.gameState === GameConstants.States.PLAYING && Settings.getSetting(Settings.Names.EnableMoveUndo); // TODO: Can undo?
+    InfoPanelGraphics.drawActionButtons(p, canResign, canUndo);
 }
 
 /**

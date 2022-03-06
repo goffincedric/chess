@@ -1,24 +1,33 @@
 import { DialogButton } from '../models/dialog/dialogButton.js';
 import { Dialog } from '../models/dialog/dialog.js';
 import { DialogConstants } from '../constants/dialogConstants.js';
-import { FunctionUtils } from '../utils/functionUtils.js';
 import { DialogLabel } from '../models/dialog/dialogLabel.js';
 import { GameConstants } from '../constants/gameConstants.js';
+import { WebStorageConstants } from '../constants/webStorageConstants.js';
 
 // Create view board button
+const viewBoardAction = () => {
+    chessBoard.gameState = GameConstants.States.OBSERVING;
+    gameEndDialog.hide();
+};
 const viewBoardButton = new DialogButton(
     'View board',
     DialogConstants.DEFAULT_DIALOG.BUTTONS_2.BUTTON_1.BOUNDING_BOX,
     DialogConstants.DEFAULT_DIALOG.BUTTON_TEXT_SIZE,
-    FunctionUtils.asyncNoOp,
+    viewBoardAction,
 );
 
 // Create reset game button
+const resetGameAction = () => {
+    localStorage.removeItem(WebStorageConstants.SAVED_GAME_PGN);
+    chessBoard.resetGame();
+    gameEndDialog.hide();
+};
 const resetGameButton = new DialogButton(
     'Reset game',
     DialogConstants.DEFAULT_DIALOG.BUTTONS_2.BUTTON_2.BOUNDING_BOX,
     DialogConstants.DEFAULT_DIALOG.BUTTON_TEXT_SIZE,
-    FunctionUtils.asyncNoOp,
+    resetGameAction,
 );
 
 // Create game end dialog

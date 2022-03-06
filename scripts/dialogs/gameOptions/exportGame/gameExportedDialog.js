@@ -1,7 +1,7 @@
-import { DialogButton } from '../../models/dialog/dialogButton.js';
-import { Dialog } from '../../models/dialog/dialog.js';
-import { DialogConstants } from '../../constants/dialogConstants.js';
-import { DialogLabel } from '../../models/dialog/dialogLabel.js';
+import { DialogButton } from '../../../models/dialog/dialogButton.js';
+import { Dialog } from '../../../models/dialog/dialog.js';
+import { DialogConstants } from '../../../constants/dialogConstants.js';
+import { DialogLabel } from '../../../models/dialog/dialogLabel.js';
 
 // Create close dialog button
 const closeAction = () => {

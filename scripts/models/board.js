@@ -55,6 +55,7 @@ export class Board {
 
     // TODO: Check string 'rnb1kbnr/pppp3p/6p1/1N3pq1/6P1/5p1B/PPPPP2P/RNBQKR b -Qkq - 1 16'
     resetGame(initialFENString) {
+        // Set up initial board
         this.players.forEach((player) => player.clearCapturedPieces());
         this.initializePieces(initialFENString);
         this._pastPiecesCount = this.pieces.length;

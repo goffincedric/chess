@@ -227,7 +227,7 @@ function drawPastMoves(p, moves) {
 const infoPanelButtonListeners = [];
 const actionButtonsYOffset = pastMovesYOffset + pastMovesHeight;
 const actionButtonsHeight = SQUARE_SIZE + BOARD_OFFSET;
-function drawActionButtons(p, canResign, canReset) {
+function drawActionButtons(p, canResign, canUndo) {
     // Check if info panel buttons can be activated
     const canActivateButton = !DialogGraphics.isDrawingDialogs();
 
@@ -246,26 +246,26 @@ function drawActionButtons(p, canResign, canReset) {
             canActivateButton,
         );
     }
-    if (canReset) {
+    if (canUndo) {
         addButton(
             p,
-            'Reset game',
+            'Undo last move',
             TOTAL_BOARD_SIZE + marginWidth,
             TOTAL_BOARD_SIZE - marginWidth - buttonHeight,
             buttonWidth,
             buttonHeight,
-            InfoPanelGraphics.resetGameListener,
+            InfoPanelGraphics.undoMoveListener,
             canActivateButton,
         );
     }
     addButton(
         p,
-        'Export game',
+        'Game options',
         TOTAL_BOARD_SIZE + INFO_PANEL_WIDTH - marginWidth - buttonWidth,
         actionButtonsYOffset + marginWidth,
         buttonWidth,
         buttonHeight,
-        InfoPanelGraphics.exportGameListener,
+        InfoPanelGraphics.showGameOptionsListener,
         canActivateButton,
     );
     addButton(
@@ -275,7 +275,7 @@ function drawActionButtons(p, canResign, canReset) {
         TOTAL_BOARD_SIZE - marginWidth - buttonHeight,
         buttonWidth,
         buttonHeight,
-        InfoPanelGraphics.settingsListener,
+        InfoPanelGraphics.showSettingsListener,
         canActivateButton,
     );
 }
@@ -339,13 +339,13 @@ export const InfoPanelGraphics = {
     resignGameListener: () => {
         throw new Error('No InfoPanelGraphics.resignGameListener listener was supplied');
     },
-    resetGameListener: () => {
-        throw new Error('No InfoPanelGraphics.resetGameListener listener was supplied');
+    showGameOptionsListener: () => {
+        throw new Error('No InfoPanelGraphics.showGameOptionsListener listener was supplied');
     },
-    exportGameListener: () => {
-        throw new Error('No InfoPanelGraphics.exportGameListener listener was supplied');
+    undoMoveListener: () => {
+        throw new Error('No InfoPanelGraphics.undoMoveListener listener was supplied');
     },
-    settingsListener: () => {
-        throw new Error('No InfoPanelGraphics.settingsListener listener was supplied');
+    showSettingsListener: () => {
+        throw new Error('No InfoPanelGraphics.showSettingsListener listener was supplied');
     },
 };
