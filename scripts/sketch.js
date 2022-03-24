@@ -106,7 +106,13 @@ function initializeInfoPanelButtons() {
     // Set info panel button listeners
     InfoPanelGraphics.resignGameListener = () => chessBoard.resignGame();
     InfoPanelGraphics.showGameOptionsListener = () => GameOptionsDialog.dialog.show();
-    InfoPanelGraphics.undoMoveListener = FunctionUtils.noOp; // TODO
+    InfoPanelGraphics.undoMoveListener = () => {
+        // Undo last move
+        chessBoard.undoLastMove();
+
+        // Save game
+        saveBoardToStorage();
+    };
     InfoPanelGraphics.showSettingsListener = () => SettingsDialog.dialog.show();
 }
 
@@ -335,10 +341,8 @@ if (EnvironmentUtils.isBrowserEnvironment()) {
 
 /**
  * TODO:
- *  * If a white bishops attacks a king from 3 squares away, and a black bishop in between it's king and the white bishop, it can't move along that line (it still blocks the king)
- *  * Add undo / redo buttons just above info panel action buttons
+ *  * Add close button to the game options dialog
  *  * Pick starting color
  *  * Add threefold move repetition check
  *  * Add AI
- *  * Check for p5 update to 1.4.1
  */

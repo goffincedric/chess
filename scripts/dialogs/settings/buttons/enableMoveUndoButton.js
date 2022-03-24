@@ -13,7 +13,7 @@ export function createEnableMoveUndoButton(x, y, buttonWidth, buttonHeight) {
     );
 
     // Set button properties
-    const getEnableMoveUndoButtonText = () => `${Settings.getSetting(Settings.Names.EnableMoveUndo) ? 'Enable' : 'Disable'} undo last move`; // Create function that sets button text
+    const getEnableMoveUndoButtonText = () => `${Settings.getSetting(Settings.Names.EnableMoveUndo) ? 'Disable' : 'Enable'} undo last move`; // Create function that sets button text
     enableMoveUndoButton.text = getEnableMoveUndoButtonText();
     enableMoveUndoButton.action = () => {
         const enableMoveUndo = Settings.getSetting(Settings.Names.EnableMoveUndo);

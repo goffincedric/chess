@@ -1,6 +1,17 @@
+import { PieceUtils } from '../utils/pieceUtils.js';
+
 export class Player {
+    /**
+     * @type {string}
+     */
     name;
+    /**
+     * @type {boolean}
+     */
     isWhite;
+    /**
+     * @type {Map<PieceTypes, Piece[]>}
+     */
     capturedPieces;
 
     constructor(name, isWhite) {
@@ -15,6 +26,19 @@ export class Player {
         } else {
             this.capturedPieces.set(piece.TYPE, [piece]);
         }
+    }
+
+    removeCapturedPiece(piece) {
+        const pieces = this.capturedPieces.get(piece.TYPE);
+        const index = pieces.indexOf(piece);
+        return pieces.splice(index, 1);
+    }
+
+    /**
+     * @returns {Piece[]}
+     */
+    getCapturedPiecesList() {
+        return Array.from(this.capturedPieces.values()).flat();
     }
 
     clearCapturedPieces() {

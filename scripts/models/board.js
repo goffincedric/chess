@@ -8,21 +8,43 @@ import { Move } from './move.js';
 import { FENUtils } from '../utils/fenUtils.js';
 import { FENConstants } from '../constants/fenConstants.js';
 import { GameConstants } from '../constants/gameConstants.js';
+import { Pawn } from './pieces/index.js';
 
 export class Board {
+    /**
+     * @type {[Player, Player]}
+     */
     players;
+    /**
+     * @type {string}
+     */
     initialFENString;
 
+    /**
+     * @type {number}
+     */
     _pastPiecesCount;
+    /**
+     * @type {(Pawn | Rook | Knight | Bishop | Queen | King | Piece)[]}
+     */
     pieces;
 
+    /**
+     * @type {Piece}
+     */
     movingPiece;
+    /**
+     * @type {Move[]}
+     */
     movingPieceMoves;
 
     /**
      * @type {boolean}
      */
     isWhiteTurn;
+    /**
+     * @type {Piece}
+     */
     pawnToPromote;
 
     /**
@@ -44,8 +66,11 @@ export class Board {
      */
     gameState;
 
-    // Variable that holds the amount of half moves made since last capture, for 50-move rule
-    // (1 full move === each player made a move, so 10 full moves = 50/51 half moves)
+    /**
+     * Variable that holds the amount of half moves made since last capture, for 50-move rule
+     * (1 full move === each player made a move, so 10 full moves = 50/51 half moves)
+     * @type {number}
+     */
     halfMovesCount = 0;
 
     constructor(player1, player2, initialFENString) {
@@ -98,6 +123,10 @@ export class Board {
         return PieceUtils.getPieceByPlacement(this.pieces, file, rank);
     }
 
+    getPieceIndexByPlacement(file, rank) {
+        return PieceUtils.getPieceIndexByPlacement(this.pieces, file, rank);
+    }
+
     setMovingPiece(piece) {
         if (piece) {
             this.movingPiece = piece;
@@ -114,6 +143,52 @@ export class Board {
         this.gameState = GameConstants.States.RESIGNED;
     }
 
+    undoLastMove() {
+        if (this.gameState === GameConstants.States.PLAYING && this.pastMoves.length > 0) {
+            // Remove last move made
+            const undoneMove = this.pastMoves.pop();
+            // Get piece that moved
+            const movedPieceIndex = this.getPieceIndexByPlacement(undoneMove.file, undoneMove.rank);
+            const movedPiece = this.pieces[movedPieceIndex];
+            // Move piece back
+            movedPiece.setPlacement(undoneMove.movingPiece.file, undoneMove.movingPiece.rank, undoneMove.movingPiece.isFirstMove);
+
+            // Replace piece by pawn if was pawn promotion
+            if (undoneMove.isPawnPromotion) {
+                this.pieces[movedPieceIndex] = new Pawn(movedPiece.file, movedPiece.rank, movedPiece.isWhite, false);
+            } else if (undoneMove.castlingMove) {
+                // Move castling rook back
+                const movedRook = this.getPieceByPlacement(undoneMove.castlingMove.file, undoneMove.castlingMove.rank);
+                movedRook.setPlacement(
+                    undoneMove.castlingMove.movingPiece.file,
+                    undoneMove.castlingMove.movingPiece.rank,
+                    undoneMove.castlingMove.movingPiece.isFirstMove,
+                );
+            }
+
+            // Place captured piece back
+            if (undoneMove.attackedPiece) {
+                // Get player that captured the piece
+                const player = this.players.find((player) => player.isWhite === undoneMove.movingPiece.isWhite);
+                const reverseCapturedPieces = player.getCapturedPiecesList().reverse();
+                // Get piece that was captured
+                const capturedPiece = reverseCapturedPieces.find(
+                    (piece) =>
+                        piece.TYPE === undoneMove.attackedPiece.TYPE &&
+                        piece.isWhite === undoneMove.attackedPiece.isWhite &&
+                        piece.file === undoneMove.file &&
+                        piece.rank === undoneMove.rank,
+                );
+                // Put piece back on board
+                player.removeCapturedPiece(capturedPiece);
+                this.pieces.push(capturedPiece);
+            }
+
+            // Toggle turn
+            this.toggleTurn(true);
+        }
+    }
+
     movePiece(newPlacement) {
         // Check if is new placement
         if (this.movingPiece.file !== newPlacement.file || this.movingPiece.rank !== newPlacement.rank) {
@@ -124,9 +199,7 @@ export class Board {
                 // Check for attacked pieces
                 if (move.attackedPiece) {
                     // Get index of piece from list of pieces
-                    const attackedPieceIndex = this.pieces.findIndex(
-                        (piece) => piece.file === move.attackedPiece.file && piece.rank === move.attackedPiece.rank,
-                    );
+                    const attackedPieceIndex = this.getPieceIndexByPlacement(move.attackedPiece.file, move.attackedPiece.rank);
                     if (attackedPieceIndex >= 0) {
                         const capturedPiece = this.pieces.splice(attackedPieceIndex, 1).shift();
                         // Add captured piece to player's pieces
@@ -144,9 +217,7 @@ export class Board {
                 // Check if move is castling move
                 if (move.castlingMove) {
                     // Find rook to castle and move it too
-                    const rook = this.pieces.find(
-                        (piece) => piece.file === move.castlingMove.movingPiece.file && piece.rank === move.castlingMove.movingPiece.rank,
-                    );
+                    const rook = this.getPieceByPlacement(move.castlingMove.movingPiece.file, move.castlingMove.movingPiece.rank);
                     rook.setPlacement(move.castlingMove.file, move.castlingMove.rank);
                 }
 
@@ -198,16 +269,28 @@ export class Board {
         }
     }
 
-    toggleTurn() {
+    toggleTurn(isUndo = false) {
         this.isWhiteTurn = !this.isWhiteTurn;
-        if (
-            this._pastPiecesCount !== this.pieces.length ||
-            this.pastMoves[this.pastMoves.length - 1].movingPiece.TYPE === PieceTypes.PAWN
-        ) {
+        if (isUndo) {
+            // Set halfMoveCount to amount of moves no pawns were moved and no pieces were captured
+            const reversedMoves = [...this.pastMoves].reverse();
+            this.halfMovesCount = Math.max(
+                reversedMoves.findIndex((move) => move.movingPiece.TYPE === PieceTypes.PAWN || move.attackedPiece),
+                0,
+            );
+
+            // Set pastPieceCount
             this._pastPiecesCount = this.pieces.length;
-            this.halfMovesCount = 0;
         } else {
-            this.halfMovesCount++;
+            if (
+                this._pastPiecesCount !== this.pieces.length ||
+                this.pastMoves[this.pastMoves.length - 1].movingPiece.TYPE === PieceTypes.PAWN
+            ) {
+                this._pastPiecesCount = this.pieces.length;
+                this.halfMovesCount = 0;
+            } else {
+                this.halfMovesCount++;
+            }
         }
 
         // Get all moves enemy player can play
@@ -220,7 +303,7 @@ export class Board {
         if (this.isDrawInsufficientPieces()) {
             this.gameState = GameConstants.States.DRAW_INSUFFICIENT_PIECES;
         } else if (this.isThreeFoldRepetition()) {
-            // TODO: Fix threefold repetition. First, implement resignations
+            // TODO: Fix threefold repetitio    n. First, implement resignations
             console.log(`Stalemate, the same move was played three times.`);
         } else if (this.isCheckMate()) {
             // Look for checkmate (no moves to play)
@@ -407,9 +490,6 @@ export class Board {
                 // Set past move as checking
                 if (this.pastMoves.length > 0) {
                     this.pastMoves[this.pastMoves.length - 1].isChecking = true;
-                }
-                if (movingPiece.file === 2 && movingPiece.TYPE === PieceTypes.BISHOP) {
-                    console.log(placementsTargetingKing, [...joinedMoves]);
                 }
                 PlacementUtils.filterPlacementsInCommon(joinedMoves, placementsTargetingKing, true);
             }

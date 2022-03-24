@@ -39,10 +39,10 @@ export class Piece {
         return 'assets/' + this.fenName.toLowerCase() + '_' + (this.isWhite ? 'l' : 'd') + extension;
     }
 
-    setPlacement(file, rank) {
+    setPlacement(file, rank, isFirstMove = false) {
         this.file = file;
         this.rank = rank;
-        this.isFirstMove = false;
+        this.isFirstMove = isFirstMove;
     }
 
     getPlacement() {
