@@ -13,5 +13,5 @@ function getPieceIndexByPlacement(pieces, file, rank) {
 export const PieceUtils = {
     getPiecesFromTeam,
     getPieceByPlacement,
-    getPieceIndexByPlacement
+    getPieceIndexByPlacement,
 };

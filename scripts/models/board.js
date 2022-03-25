@@ -127,10 +127,13 @@ export class Board {
         return PieceUtils.getPieceIndexByPlacement(this.pieces, file, rank);
     }
 
+    /**
+     * @param {Piece} piece
+     */
     setMovingPiece(piece) {
         if (piece) {
             this.movingPiece = piece;
-            this.movingPieceMoves = this.getMoves(piece);
+            this.movingPieceMoves = this.currentPlayerMoves.filter(move => move.movingPiece.file === piece.file && move.movingPiece.rank === piece.rank);
         }
     }
 
@@ -144,7 +147,7 @@ export class Board {
     }
 
     undoLastMove() {
-        if (this.gameState === GameConstants.States.PLAYING && this.pastMoves.length > 0) {
+        if (this.pastMoves.length > 0) {
             // Remove last move made
             const undoneMove = this.pastMoves.pop();
             // Get piece that moved
@@ -176,19 +179,26 @@ export class Board {
                     (piece) =>
                         piece.TYPE === undoneMove.attackedPiece.TYPE &&
                         piece.isWhite === undoneMove.attackedPiece.isWhite &&
-                        piece.file === undoneMove.file &&
-                        piece.rank === undoneMove.rank,
+                        piece.file === undoneMove.attackedPiece.file &&
+                        piece.rank === undoneMove.attackedPiece.rank,
                 );
                 // Put piece back on board
                 player.removeCapturedPiece(capturedPiece);
                 this.pieces.push(capturedPiece);
             }
 
+            // Set gameState to playing
+            chessBoard.gameState = GameConstants.States.PLAYING;
+
             // Toggle turn
             this.toggleTurn(true);
         }
     }
 
+    /**
+     *
+     * @param {Placement} newPlacement
+     */
     movePiece(newPlacement) {
         // Check if is new placement
         if (this.movingPiece.file !== newPlacement.file || this.movingPiece.rank !== newPlacement.rank) {
@@ -303,7 +313,7 @@ export class Board {
         if (this.isDrawInsufficientPieces()) {
             this.gameState = GameConstants.States.DRAW_INSUFFICIENT_PIECES;
         } else if (this.isThreeFoldRepetition()) {
-            // TODO: Fix threefold repetitio    n. First, implement resignations
+            // TODO: Fix threefold repetition. First, implement resignations
             console.log(`Stalemate, the same move was played three times.`);
         } else if (this.isCheckMate()) {
             // Look for checkmate (no moves to play)
@@ -387,7 +397,7 @@ export class Board {
      *
      * @param {Piece} movingPiece
      * @param {boolean} isEnemyMoves
-     * @returns {*[]}
+     * @returns {Move[]}
      */
     getMoves(movingPiece, isEnemyMoves = false) {
         // Get possible moves

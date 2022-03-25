@@ -24,7 +24,9 @@ import { FENUtils } from './utils/fenUtils.js';
 import { RegexConstants } from './constants/regexConstants.js';
 import { GameConstants } from './constants/gameConstants.js';
 import { GameOptionsDialog } from './dialogs/gameOptions/gameOptionsDialog.js';
-import { FunctionUtils } from './utils/functionUtils.js';
+import { minimax } from './ai/minimax.js';
+import { EvaluationFunctions } from './ai/evaluate.js';
+import { alphabeta } from './ai/alphabeta.js';
 
 // Create chessboard variable
 /**
@@ -329,6 +331,46 @@ export function saveBoardToStorage() {
     }
 }
 
+export function evaluateBestMove(depth = 1) {
+    const label = 'Minimax benchmark';
+    let bestHeuristic = Number.MIN_SAFE_INTEGER;
+    let bestMoves = [];
+    EvaluationFunctions.node_count = 0;
+
+    if (depth <= 0) depth = 1;
+
+    console.time(label);
+    for (const move of chessBoard.currentPlayerMoves) {
+        // Set moving piece
+        const pieceToMove = chessBoard.getPieceByPlacement(move.movingPiece.file, move.movingPiece.rank);
+        chessBoard.setMovingPiece(pieceToMove);
+        // Execute move
+        chessBoard.movePiece(new Placement(move.file, move.rank));
+        // Evaluate current move
+        const heuristic = alphabeta(
+            chessBoard,
+            depth - 1,
+            (chessBoard, isMaximizingPlayer) => EvaluationFunctions.evaluateBoardByPieces(chessBoard, isMaximizingPlayer, false),
+            Number.MIN_SAFE_INTEGER,
+            Number.MAX_SAFE_INTEGER,
+            false,
+        );
+        // If move is better than last made move, save it
+        if (heuristic > bestHeuristic) {
+            bestHeuristic = heuristic;
+            bestMoves = [move];
+        } else if (heuristic === bestHeuristic) {
+            bestMoves.push(move);
+        }
+        // Undo move
+        chessBoard.undoLastMove();
+    }
+    console.timeEnd(label);
+    console.log('Heuristic:', bestHeuristic);
+    console.log('Best moves:', bestMoves);
+    console.log('Nodes evaluated:', EvaluationFunctions.node_count);
+}
+
 // Set global functions and export chessBoard
 if (EnvironmentUtils.isBrowserEnvironment()) {
     window.preload = preload;
@@ -336,7 +378,7 @@ if (EnvironmentUtils.isBrowserEnvironment()) {
     window.draw = draw;
     window.mousePressed = mousePressed;
     window.mouseReleased = mouseReleased;
-    window.setAutoFlipBoard = setAutoFlipBoard;
+    window.evaluateBestMove = evaluateBestMove;
 }
 
 /**
@@ -344,5 +386,7 @@ if (EnvironmentUtils.isBrowserEnvironment()) {
  *  * Add close button to the game options dialog
  *  * Pick starting color
  *  * Add threefold move repetition check
- *  * Add AI
+ *  * AI:
+ *    - Don't allow piece to be put back
+ *    - Add iterative deepening to AI (calculate best possible state and return path to that state, and recalculate deeper from that point)
  */
