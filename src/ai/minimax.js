@@ -6,7 +6,6 @@ import { Placement } from '../models/placement.js';
  * @param {boolean} isMaximizingPlayer
  */
 
-
 /**
  * Initial call: minimax(chessBoard, depth, evaluateFunction);
  * https://en.wikipedia.org/wiki/Minimax#Minimax_algorithm_with_alternate_moves

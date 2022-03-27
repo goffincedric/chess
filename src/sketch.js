@@ -3,7 +3,7 @@ import { Board } from './models/board.js';
 import { BoardUtils } from './utils/boardUtils.js';
 import { CanvasUtils } from './utils/canvasUtils.js';
 import { AssetUtils } from './utils/assetUtils.js';
-import { Bishop, King, Knight, Pawn, Queen, Rook } from './models/pieces/index.js';
+import { Bishop, King, Knight, Pawn, Queen, Rook } from './models/pieces';
 import { BoardGraphics } from './graphics/boardGraphics.js';
 import { MoveGraphics } from './graphics/moveGraphics.js';
 import { PieceGraphics } from './graphics/pieceGraphics.js';
@@ -24,9 +24,9 @@ import { FENUtils } from './utils/fenUtils.js';
 import { RegexConstants } from './constants/regexConstants.js';
 import { GameConstants } from './constants/gameConstants.js';
 import { GameOptionsDialog } from './dialogs/gameOptions/gameOptionsDialog.js';
-import { minimax } from './ai/minimax.js';
 import { EvaluationFunctions } from './ai/evaluate.js';
 import { alphabeta } from './ai/alphabeta.js';
+import p5 from 'p5';
 
 // Create chessboard variable
 /**
@@ -38,7 +38,7 @@ let chessBoard;
  * P5 hooks
  */
 // Preload data
-export function preload(p = window, board, preloadedAssets) {
+export function preload(p, board, preloadedAssets) {
     let importedBoard;
     if (board) {
         importedBoard = board;
@@ -119,7 +119,7 @@ function initializeInfoPanelButtons() {
 }
 
 // Canvas initialization function, called once at start
-export function setup(p = window, loops = true) {
+export function setup(p, loops = true) {
     // Create canvas element to draw on
     const canvas = p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -146,7 +146,7 @@ export function setup(p = window, loops = true) {
 }
 
 // Canvas update function
-export function draw(p = window) {
+export function draw(p) {
     // Check if board needs to be flipped
     const flipBoard = Settings.getSetting(Settings.Names.AutoFlipBoard) && !chessBoard.isWhiteTurn;
 
@@ -191,7 +191,7 @@ export function draw(p = window) {
  * Functions that draw on canvas
  */
 
-function drawInfoPanelContents(p = window) {
+function drawInfoPanelContents(p) {
     // Draw info panel
     InfoPanelGraphics.drawPanel(p);
 
@@ -213,29 +213,29 @@ function drawInfoPanelContents(p = window) {
  * Event listeners
  */
 // Mouse pressed listener
-function mousePressed() {
+function mousePressed(p) {
     // Return if click is not on canvas position
-    if (!CanvasUtils.isInCanvas(mouseX, mouseY)) return;
+    if (!CanvasUtils.isInCanvas(p.mouseX, p.mouseY)) return;
 
     if (DialogGraphics.isDrawingDialogs()) {
         // Check for dialog actions
-        DialogGraphics.checkDialogActions(window);
+        DialogGraphics.checkDialogActions(p);
     } else {
         // Check for info panel actions
-        InfoPanelGraphics.checkInfoPanelActions(window);
+        InfoPanelGraphics.checkInfoPanelActions(p);
 
-        if (CanvasUtils.isInBoard(mouseX, mouseY) && chessBoard.gameState === GameConstants.States.PLAYING) {
+        if (CanvasUtils.isInBoard(p.mouseX, p.mouseY) && chessBoard.gameState === GameConstants.States.PLAYING) {
             // Check if is pawn promotion
             if (chessBoard.pawnToPromote) {
-                choosePromotionPiece(window);
+                choosePromotionPiece(p);
             } else {
-                setMovingPiece(window);
+                setMovingPiece(p);
             }
         }
     }
 }
 
-export function setMovingPiece(p = window) {
+export function setMovingPiece(p) {
     // Check if board is flipped
     const isFlipped = Settings.getSetting(Settings.Names.AutoFlipBoard) && !chessBoard.isWhiteTurn;
     // Convert mouse position to placement
@@ -247,7 +247,7 @@ export function setMovingPiece(p = window) {
     }
 }
 
-export function choosePromotionPiece(p = window) {
+export function choosePromotionPiece(p) {
     // Check if board is flipped
     const isFlipped = Settings.getSetting(Settings.Names.AutoFlipBoard) && !chessBoard.isWhiteTurn;
 
@@ -269,9 +269,9 @@ export function choosePromotionPiece(p = window) {
 }
 
 // Mouse released listener
-function mouseReleased() {
+function mouseReleased(p) {
     // Reset moving piece if is released outside board position
-    if (!CanvasUtils.isInBoard(mouseX, mouseY)) {
+    if (!CanvasUtils.isInBoard(p.mouseX, p.mouseY)) {
         chessBoard.clearMovingPiece();
     }
 
@@ -281,7 +281,7 @@ function mouseReleased() {
     // Check if board is flipped
     const isFlipped = Settings.getSetting(Settings.Names.AutoFlipBoard) && !chessBoard.isWhiteTurn;
     // Get placement on board
-    const newPlacement = BoardUtils.positionToPlacement(mouseX, mouseY, isFlipped);
+    const newPlacement = BoardUtils.positionToPlacement(p.mouseX, p.mouseY, isFlipped);
     // Set piece to new placement
     chessBoard.movePiece(newPlacement);
 
@@ -371,14 +371,33 @@ export function evaluateBestMove(depth = 1) {
     console.log('Nodes evaluated:', EvaluationFunctions.node_count);
 }
 
+async function analysis() {
+    // const analysis = await chessAnalysisApi.getAnalysis({
+    //     fen: 'rnbqkb1r/ppp3pp/3P1p2/8/4n3/8/PPP1QPPP/RNB1KBNR w KQkq - 0 6',
+    //     excludes: [PROVIDERS.LICHESS_CLOUD_EVAL, PROVIDERS.LICHESS_BOOK],
+    // });
+    // console.log(analysis);
+
+    // const stockfish = new Worker('stockfish.js');
+
+    // const analysis = await chessAnalysisApi.getAnalysis({
+    //     fen: 'rnbqkb1r/ppp3pp/3P1p2/8/4n3/8/PPP1QPPP/RNB1KBNR w KQkq - 0 6',
+    //     excludes: [chessAnalysisApi.providers.LICHESS_CLOUD_EVAL, chessAnalysisApi.providers.LICHESS_BOOK],
+    // });
+    // console.log(analysis);
+}
+
 // Set global functions and export chessBoard
 if (EnvironmentUtils.isBrowserEnvironment()) {
-    window.preload = preload;
-    window.setup = setup;
-    window.draw = draw;
-    window.mousePressed = mousePressed;
-    window.mouseReleased = mouseReleased;
+    window.p5instance = new p5((p) => {
+        p.preload = () => preload(p);
+        p.setup = () => setup(p);
+        p.draw = () => draw(p);
+        p.mousePressed = () => mousePressed(p);
+        p.mouseReleased = () => mouseReleased(p);
+    });
     window.evaluateBestMove = evaluateBestMove;
+    window.analysis = analysis;
 }
 
 /**

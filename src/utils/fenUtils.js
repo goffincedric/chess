@@ -1,6 +1,6 @@
 import { FILES, RANKS } from '../constants/boardConstants.js';
 import { PieceUtils } from './pieceUtils.js';
-import { Bishop, King, Knight, Pawn, Queen, Rook } from '../models/pieces/index.js';
+import { Bishop, King, Knight, Pawn, Queen, Rook } from '../models/pieces';
 import { BoardUtils } from './boardUtils.js';
 import { Move } from '../models/move.js';
 import { PieceTypes } from '../constants/pieceConstants.js';

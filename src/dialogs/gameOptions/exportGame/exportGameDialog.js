@@ -7,13 +7,7 @@ import { DialogLabel } from '../../../models/dialog/dialogLabel.js';
 
 // Create export to FEN button
 const exportFENAction = async () => {
-    const fenString = FENUtils.generateFENFromBoard(
-        chessBoard.pieces,
-        chessBoard.isWhiteTurn,
-        chessBoard.halfMovesCount,
-        chessBoard.currentPlayerMoves,
-        chessBoard.pastMoves,
-    );
+    const fenString = chessBoard.getFEN();
     await navigator.clipboard.writeText(fenString);
     exportGameDialog.hide();
     GameExportedDialog.dialog.show();
