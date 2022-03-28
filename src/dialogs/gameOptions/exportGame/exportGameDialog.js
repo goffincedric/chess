@@ -1,7 +1,6 @@
 import { DialogButton } from '../../../models/dialog/dialogButton.js';
 import { Dialog } from '../../../models/dialog/dialog.js';
 import { DialogConstants } from '../../../constants/dialogConstants.js';
-import { FENUtils } from '../../../utils/fenUtils.js';
 import { GameExportedDialog } from './gameExportedDialog.js';
 import { DialogLabel } from '../../../models/dialog/dialogLabel.js';
 
@@ -12,7 +11,12 @@ const exportFENAction = async () => {
     exportGameDialog.hide();
     GameExportedDialog.dialog.show();
 };
-const exportFENButton = new DialogButton('Export to FEN', DialogConstants.DEFAULT_DIALOG.BUTTONS_2.BUTTON_1.BOUNDING_BOX, DialogConstants.DEFAULT_DIALOG.BUTTON_TEXT_SIZE, exportFENAction);
+const exportFENButton = new DialogButton(
+    'Export to FEN',
+    DialogConstants.DEFAULT_DIALOG.BUTTONS_2.BUTTON_1.BOUNDING_BOX,
+    DialogConstants.DEFAULT_DIALOG.BUTTON_TEXT_SIZE,
+    exportFENAction,
+);
 
 // Create export to PGN button
 const exportPGNAction = async () => {
@@ -21,7 +25,12 @@ const exportPGNAction = async () => {
     exportGameDialog.hide();
     GameExportedDialog.dialog.show();
 };
-const exportPGNButton = new DialogButton('Export to PGN', DialogConstants.DEFAULT_DIALOG.BUTTONS_2.BUTTON_2.BOUNDING_BOX, DialogConstants.DEFAULT_DIALOG.BUTTON_TEXT_SIZE, exportPGNAction);
+const exportPGNButton = new DialogButton(
+    'Export to PGN',
+    DialogConstants.DEFAULT_DIALOG.BUTTONS_2.BUTTON_2.BOUNDING_BOX,
+    DialogConstants.DEFAULT_DIALOG.BUTTON_TEXT_SIZE,
+    exportPGNAction,
+);
 
 // Create export game dialog
 const exportGameDialog = new Dialog(

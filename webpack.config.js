@@ -18,15 +18,12 @@ module.exports = {
                             [
                                 '@babel/preset-env',
                                 {
-                                    targets: "> 0.25%, not dead, last 10 chrome versions",
+                                    targets: '> 0.25%, not dead, last 10 chrome versions',
                                     useBuiltIns: 'entry',
                                 },
                             ],
                         ],
-                        plugins: [
-                            "@babel/plugin-transform-runtime",
-                            '@babel/plugin-transform-regenerator',
-                        ],
+                        plugins: ['@babel/plugin-transform-runtime', '@babel/plugin-transform-regenerator'],
                     },
                 },
             },

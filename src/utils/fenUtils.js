@@ -313,6 +313,7 @@ function generateFENFromBoard(pieces, isWhiteTurn, halfMoveCount, currentPlayerM
                 skipCount++;
             }
         }
+        addPossibleSkipCount();
     }
 
     // Add active color
