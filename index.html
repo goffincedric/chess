@@ -1,12 +1,57 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Chess</title>
-        <link rel="stylesheet" href="css/styles.css" />
-        <link rel="icon" type="image/x-icon" href="assets/k_l.svg" />
-    </head>
-    <body></body>
-    <script type="module" crossorigin="anonymous" src="scripts/sketch.js"></script>
-    <script src="lib/p5.min.js"></script>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8' />
+    <title>Chess</title>
+    <link rel='stylesheet' href='css/styles.css' />
+    <link rel='icon' type='image/x-icon' href='assets/k_l.svg' />
+</head>
+<body></body>
+<script type='module' crossorigin='anonymous' src='scripts/sketch.js'></script>
+<script src='lib/p5.min.js'></script>
+<script>
+    let wait_for_script;
+    /// We can load Stockfish.js via Web Workers or directly via a <script> tag.
+    /// Web Workers are better since they don't block the UI, but they are not always available.
+    (function fix_workers() {
+        let script_tag;
+        /// Does the environment support web workers?  If not, include stockfish.js directly.
+        ///NOTE: Since web workers don't work when a page is loaded from the local system, we have to fake it there too. (Take that security measures!)
+        if (!Worker || (location && location.protocol === 'file:')) {
+            script_tag = document.createElement('script');
+            script_tag.type = 'text/javascript';
+            script_tag.src = 'stockfish.js';
+            script_tag.onload = init;
+            document.getElementsByTagName('head')[0].appendChild(script_tag);
+            wait_for_script = true;
+            setTimeout(function() {
+                console.warn('Loading this example from the file: protocol will load the slower asm.js engine.\nRun server.js and then load http://localhost:8080/ for the WASM engine.');
+            }, 3000);
+        }
+    }());
+
+    function init() {
+        // Initialize engine and make globally available
+        window.engine = new Worker('stockfish.js');
+        // Set engine message listener to output to console
+
+        engine.onmessage = (message) => console.log(message.data);
+        // Set in UCI mode
+        engine.postMessage('uci');
+        // Set engine to use NNUE
+        engine.postMessage('setoption name Use NNUE value true');
+        // Set engine ELO
+        engine.postMessage('setoption name UCI_LimitStrength value true');
+        engine.postMessage('setoption name UCI_Elo value 1500');
+
+        // Set engine ready for new game
+        engine.postMessage('ucinewgame');
+        engine.postMessage('isready');
+    }
+
+    /// If we load Stockfish.js via a <script> tag, we need to wait until it loads.
+    if (!wait_for_script) {
+        document.addEventListener('DOMContentLoaded', init);
+    }
+</script>
 </html>

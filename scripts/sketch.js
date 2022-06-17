@@ -3,7 +3,7 @@ import { Board } from './models/board.js';
 import { BoardUtils } from './utils/boardUtils.js';
 import { CanvasUtils } from './utils/canvasUtils.js';
 import { AssetUtils } from './utils/assetUtils.js';
-import { Bishop, King, Knight, Pawn, Queen, Rook } from './models/pieces';
+import { Bishop, King, Knight, Pawn, Queen, Rook } from './models/pieces/index.js';
 import { BoardGraphics } from './graphics/boardGraphics.js';
 import { MoveGraphics } from './graphics/moveGraphics.js';
 import { PieceGraphics } from './graphics/pieceGraphics.js';

@@ -8,7 +8,7 @@ import { Move } from './move.js';
 import { FENUtils } from '../utils/fenUtils.js';
 import { FENConstants } from '../constants/fenConstants.js';
 import { GameConstants } from '../constants/gameConstants.js';
-import { Pawn } from './pieces';
+import { Pawn } from './pieces/index.js';
 
 export class Board {
     /**
