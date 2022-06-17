@@ -19,6 +19,7 @@ const COLORS = {
     MOVES: {
         CURRENT: '#F9F277B8',
         EMPTY: '#6D7ED0B8',
+        LAST_MOVE: '#DB5A42B8',
         TAKE_PIECE: '#5A9367B8',
         ENEMY: 'rgba(203,43,43,0.72)',
     },

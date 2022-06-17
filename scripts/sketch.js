@@ -128,7 +128,15 @@ export function setup(p, loops = true) {
     // Draw border
     BoardGraphics.drawBorder(p, flipBoard);
     // Draw chess board
-    BoardGraphics.drawBoard(p);
+    BoardGraphics.drawBoard(p, flipBoard);
+    // Highlight squares of last move
+    if (chessBoard.pastMoves.length) {
+        const lastMove = chessBoard.pastMoves[chessBoard.pastMoves.length - 1];
+        const lastMovePlacements = [new Placement(lastMove.movingPiece.file, lastMove.movingPiece.rank), new Placement(lastMove.file, lastMove.rank)];
+        console.log(lastMovePlacements);
+        BoardGraphics.highlightSquares(p, lastMovePlacements, COLORS.MOVES.LAST_MOVE, flipBoard);
+    }
+
 
     // Draw info panel
     drawInfoPanelContents(p);
@@ -160,6 +168,14 @@ export function draw(p) {
 
     // Draw chess board
     BoardGraphics.drawBoard(p);
+
+    // Highlight squares of last move
+    if (chessBoard.pastMoves.length) {
+        const lastMove = chessBoard.pastMoves[chessBoard.pastMoves.length - 1];
+        const lastMovePlacements = [new Placement(lastMove.movingPiece.file, lastMove.movingPiece.rank), new Placement(lastMove.file, lastMove.rank)];
+        console.log(lastMovePlacements);
+        BoardGraphics.highlightSquares(p, lastMovePlacements, COLORS.MOVES.LAST_MOVE, flipBoard);
+    }
 
     // Draw enemy moves
     // MoveGraphics.drawEnemyMoves(p, chessBoard.enemyAttacks, flipBoard);

@@ -77,7 +77,7 @@ function drawBorder(p, isFlipped) {
 }
 
 // Draw board on canvas
-function drawBoard(p) {
+function drawBoard(p, isFlipped) {
     p.noStroke();
 
     // Draw small stroke around board
@@ -97,7 +97,18 @@ function drawBoard(p) {
     }
 }
 
+// Highlight a square on the board
+function highlightSquares(p, placements, color, isFlipped) {
+    if (isFlipped) GraphicsUtils.flipBoard(p);
+
+    // Highlight each square on the board
+    placements.forEach((placement) => GraphicsUtils.drawSquare(p, placement.file, placement.rank, color, isFlipped));
+
+    if (isFlipped) GraphicsUtils.unFlip(p);
+}
+
 export const BoardGraphics = {
     drawBorder,
     drawBoard,
+    highlightSquares,
 };
