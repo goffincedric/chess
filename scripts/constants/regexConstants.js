@@ -1,7 +1,7 @@
 import { FENConstants } from './fenConstants.js';
 
 const getMoveTextForSide = (side) =>
-    `((?<${side.toLowerCase()}Piece>[RNBQK])?(?<${side.toLowerCase()}From>[a-h]?[1-8]?)?x?(?<${side.toLowerCase()}To>[a-h][1-8])(?<${side.toLowerCase()}Modifier>[+#])?)|(?<${side.toLowerCase()}QueenCastle>${
+    `((?<${side.toLowerCase()}Piece>[RNBQK])?(?<${side.toLowerCase()}From>[a-h]?[1-8]?)?x?(?<${side.toLowerCase()}To>[a-h][1-8])(?:=(?<${side.toLowerCase()}Promotion>[RBNQ]))?(?<${side.toLowerCase()}Modifier>[+#])?)|(?<${side.toLowerCase()}QueenCastle>${
         FENConstants.QUEEN_SIDE_CASTLE_NOTATION
     })|(?<${side.toLowerCase()}KingCastle>${FENConstants.KING_SIDE_CASTLE_NOTATION})`;
 export const RegexConstants = {

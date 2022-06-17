@@ -17,19 +17,23 @@ const _defaultSettings = {
 let settings = loadSettings();
 
 function loadSettings() {
-    const settings = localStorage.getItem(WebStorageConstants.SETTINGS);
-    if (settings) {
-        try {
-            return JSON.parse(settings);
-        } catch (_) {
-            console.warn("Couldn't parse settings, returning default settings");
+    if (EnvironmentUtils.isBrowserEnvironment()) {
+        const settings = localStorage.getItem(WebStorageConstants.SETTINGS);
+        if (settings) {
+            try {
+                return JSON.parse(settings);
+            } catch (_) {
+                console.warn("Couldn't parse settings, returning default settings");
+            }
         }
     }
     return JSON.parse(JSON.stringify(_defaultSettings));
 }
 
 function saveSettings() {
-    localStorage.setItem(WebStorageConstants.SETTINGS, JSON.stringify(settings));
+    if (EnvironmentUtils.isBrowserEnvironment()) {
+        localStorage.setItem(WebStorageConstants.SETTINGS, JSON.stringify(settings));
+    }
 }
 
 /**

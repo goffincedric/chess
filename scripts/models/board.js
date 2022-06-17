@@ -8,7 +8,7 @@ import { Move } from './move.js';
 import { FENUtils } from '../utils/fenUtils.js';
 import { FENConstants } from '../constants/fenConstants.js';
 import { GameConstants } from '../constants/gameConstants.js';
-import { Pawn } from './pieces/index.js';
+import { Pawn } from './pieces';
 
 export class Board {
     /**
@@ -133,7 +133,9 @@ export class Board {
     setMovingPiece(piece) {
         if (piece) {
             this.movingPiece = piece;
-            this.movingPieceMoves = this.currentPlayerMoves.filter(move => move.movingPiece.file === piece.file && move.movingPiece.rank === piece.rank);
+            this.movingPieceMoves = this.currentPlayerMoves.filter(
+                (move) => move.movingPiece.file === piece.file && move.movingPiece.rank === piece.rank,
+            );
         }
     }
 
@@ -188,7 +190,7 @@ export class Board {
             }
 
             // Set gameState to playing
-            chessBoard.gameState = GameConstants.States.PLAYING;
+            this.gameState = GameConstants.States.PLAYING;
 
             // Toggle turn
             this.toggleTurn(true);
@@ -683,6 +685,10 @@ export class Board {
         const whitePlayer = this.players.find((player) => player.isWhite);
         const blackPlayer = this.players.find((player) => !player.isWhite);
         return `${whitePlayer.name} VS ${blackPlayer.name}`;
+    }
+
+    getFEN() {
+        return FENUtils.generateFENFromBoard(this.pieces, this.isWhiteTurn, this.halfMovesCount, this.currentPlayerMoves, this.pastMoves);
     }
 
     getPGN(siteName = null) {

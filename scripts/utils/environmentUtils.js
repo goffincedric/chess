@@ -1,5 +1,5 @@
 function isBrowserEnvironment() {
-    return typeof process !== 'object';
+    return typeof window === 'object';
 }
 
 function isNodeEnvironment() {

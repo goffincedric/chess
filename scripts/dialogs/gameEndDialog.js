@@ -49,17 +49,11 @@ function updateGameEndDialogText(gameState, isWhiteTurn) {
         case GameConstants.States.DRAW_STALEMATE:
         case GameConstants.States.DRAW_INSUFFICIENT_PIECES:
             gameEndDialog.title.text = "It's a draw!";
-            switch (gameState) {
-                case GameConstants.States.DRAW_STALEMATE:
-                    gameEndDialog.description.text = `Stalemate, ${isWhiteTurn ? 'black' : 'white'} can't play any more moves.`;
-                    break;
-                case GameConstants.States.DRAW_INSUFFICIENT_PIECES:
-                    gameEndDialog.description.text = "Insufficient pieces to finish the game, it's a draw!";
-                    break;
-                case GameConstants.States.DRAW_CALLED:
-                    gameEndDialog.description.text = 'Both players agreed to a draw!';
-                    break;
-            }
+            if (gameState === GameConstants.States.DRAW_STALEMATE)
+                gameEndDialog.description.text = `Stalemate, ${isWhiteTurn ? 'black' : 'white'} can't play any more moves.`;
+            else if (gameState === GameConstants.States.DRAW_INSUFFICIENT_PIECES)
+                gameEndDialog.description.text = "Insufficient pieces to finish the game, it's a draw!";
+            else if (gameState === GameConstants.States.DRAW_CALLED) gameEndDialog.description.text = 'Both players agreed to a draw!';
             break;
         case GameConstants.States.RESIGNED:
             gameEndDialog.title.text = `${isWhiteTurn ? 'White' : 'Black'} resigned!`;

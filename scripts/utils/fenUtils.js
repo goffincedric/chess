@@ -1,6 +1,6 @@
 import { FILES, RANKS } from '../constants/boardConstants.js';
 import { PieceUtils } from './pieceUtils.js';
-import { Bishop, King, Knight, Pawn, Queen, Rook } from '../models/pieces/index.js';
+import { Bishop, King, Knight, Pawn, Queen, Rook } from '../models/pieces';
 import { BoardUtils } from './boardUtils.js';
 import { Move } from '../models/move.js';
 import { PieceTypes } from '../constants/pieceConstants.js';
@@ -137,6 +137,14 @@ function generateBoardFromPGN(pgnString) {
     const blackPlayer = new Player(blackName, false);
     const board = new Board(whitePlayer, blackPlayer, fen);
 
+    /**
+     * @param{string} from
+     * @param{string} to
+     * @param{string} kingCastle
+     * @param{string} queenCastle
+     * @param{string} fenName
+     * @return {{piece, placementToMoveTo: Placement}}
+     */
     function getMoveDataFromPGNRegexData(from, to, kingCastle, queenCastle, fenName) {
         // Get piece to move
         let placementToMoveTo;
@@ -172,8 +180,7 @@ function generateBoardFromPGN(pgnString) {
                     move.file === placementToMoveTo.file && // Filter by file to move to
                     move.rank === placementToMoveTo.rank && // Filter by rank to move to
                     (!placementToMoveFrom || // Filter by placement to move from if present
-                        move.movingPiece.file === placementToMoveFrom.file ||
-                        move.movingPiece.rank === placementToMoveFrom.rank),
+                        (move.movingPiece.file === placementToMoveFrom.file && move.movingPiece.rank === placementToMoveFrom.rank)),
             );
         } else if (kingCastle) {
             // Find king side castling move
@@ -195,6 +202,25 @@ function generateBoardFromPGN(pgnString) {
         return { piece: pieceToMove, placementToMoveTo };
     }
 
+    /**
+     * @param{string} fenName
+     * @return {Rook|Knight|Queen|null|Bishop}
+     */
+    function getPieceClassToPromoteTo(fenName) {
+        switch (fenName.toLowerCase()) {
+            case 'r':
+                return Rook.prototype.constructor;
+            case 'n':
+                return Knight.prototype.constructor;
+            case 'b':
+                return Bishop.prototype.constructor;
+            case 'q':
+                return Queen.prototype.constructor;
+            default:
+                return null;
+        }
+    }
+
     // Generate turns from PGN move text
     const moveTextTurns = moveText.matchAll(RegexConstants.PGN_MOVETEXT);
     for (let result of moveTextTurns) {
@@ -211,6 +237,12 @@ function generateBoardFromPGN(pgnString) {
                 );
                 board.setMovingPiece(whitePiece);
                 board.movePiece(placementToMoveWhiteTo);
+                if (board.pawnToPromote && result.groups.whitePromotion) {
+                    let pieceClass = getPieceClassToPromoteTo(result.groups.whitePromotion);
+                    if (pieceClass) {
+                        board.promotePawn(pieceClass);
+                    }
+                }
             }
 
             // Execute black move
@@ -224,6 +256,12 @@ function generateBoardFromPGN(pgnString) {
                 );
                 board.setMovingPiece(blackPiece);
                 board.movePiece(placementToMoveBlackTo);
+                if (board.pawnToPromote && result.groups.blackPromotion) {
+                    let pieceClass = getPieceClassToPromoteTo(result.groups.blackPromotion);
+                    if (pieceClass) {
+                        board.promotePawn(pieceClass);
+                    }
+                }
             }
 
             // Check for game state
@@ -266,7 +304,7 @@ function generateFENForMove(move) {
 
     // Check if is pawn promotion
     if (move.isPawnPromotion && move.promotedToPiece) {
-        moveNotation += `=${move.promotedToPiece.fenName}`;
+        moveNotation += `=${move.promotedToPiece.fenName.toUpperCase()}`;
     }
 
     // Check if is checking or checkmating move
@@ -313,6 +351,7 @@ function generateFENFromBoard(pieces, isWhiteTurn, halfMoveCount, currentPlayerM
                 skipCount++;
             }
         }
+        addPossibleSkipCount();
     }
 
     // Add active color
