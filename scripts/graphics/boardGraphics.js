@@ -13,6 +13,44 @@ import {
 import { BoardUtils } from '../utils/boardUtils.js';
 import { GraphicsUtils } from '../utils/graphicsUtils.js';
 import { CANVAS_HEIGHT } from '../constants/canvasConstants.js';
+import { Placement } from '../models/placement.js';
+
+// Adds file markings around board
+function addFileMarkings(p, yPos, upsideDown = false) {
+    let asciiOffset = 65;
+    let marking, xPos;
+    for (let i = 0; i < FILES; i++) {
+        marking = String.fromCharCode(i + asciiOffset);
+        xPos = BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2;
+        if (upsideDown) {
+            p.push();
+            p.translate(xPos, yPos);
+            p.rotate(p.radians(180));
+            p.text(marking, 0, 0);
+            p.pop();
+        } else {
+            p.text(marking, xPos, yPos);
+        }
+    }
+}
+
+// Adds rank markings around board
+function addRankMarkings(p, xPos, upsideDown = false) {
+    let marking, yPos;
+    for (let i = 0; i < RANKS; i++) {
+        marking = `${RANKS - i}`;
+        yPos = BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2;
+        if (upsideDown) {
+            p.push();
+            p.translate(xPos, yPos);
+            p.rotate(p.radians(180));
+            p.text(marking, 0, 0);
+            p.pop();
+        } else {
+            p.text(marking, xPos, yPos);
+        }
+    }
+}
 
 // Draw border around board
 function drawBorder(p, isFlipped) {
@@ -29,55 +67,20 @@ function drawBorder(p, isFlipped) {
     // Check if markings need to be flipped
     if (isFlipped) GraphicsUtils.flipBoard(p);
 
-    // Add file markings to border
-    function addFileMarkings(xPos, upsideDown = false) {
-        let marking, yPos;
-        for (let i = 0; i < FILES; i++) {
-            marking = `${FILES - i}`;
-            yPos = BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2;
-            if (upsideDown) {
-                p.push();
-                p.translate(xPos, yPos);
-                p.rotate(p.radians(180));
-                p.text(marking, 0, 0);
-                p.pop();
-            } else {
-                p.text(marking, xPos, yPos);
-            }
-        }
-    }
+    // Add file markings to borders
+    addFileMarkings(p, BOARD_OFFSET / 2, true);
+    addFileMarkings(p, BOARD_SIZE + BOARD_OFFSET * 1.5);
 
-    addFileMarkings(BOARD_OFFSET / 2);
-    addFileMarkings(BOARD_SIZE + BOARD_OFFSET * 1.5, true);
-
-    // Add rank markings to borders
-    function addRankMarkings(yPos, upsideDown = false) {
-        let asciiOffset = 65;
-        let marking, xPos;
-        for (let i = 0; i < RANKS; i++) {
-            marking = String.fromCharCode(i + asciiOffset);
-            xPos = BOARD_OFFSET + SQUARE_SIZE * i + SQUARE_SIZE / 2;
-            if (upsideDown) {
-                p.push();
-                p.translate(xPos, yPos);
-                p.rotate(p.radians(180));
-                p.text(marking, 0, 0);
-                p.pop();
-            } else {
-                p.text(marking, xPos, yPos);
-            }
-        }
-    }
-
-    addRankMarkings(BOARD_OFFSET / 2, true);
-    addRankMarkings(BOARD_SIZE + BOARD_OFFSET * 1.5);
+    // Add rank markings to border
+    addRankMarkings(p, BOARD_OFFSET / 2);
+    addRankMarkings(p, BOARD_SIZE + BOARD_OFFSET * 1.5, true);
 
     // Revert flip of markings
     if (isFlipped) GraphicsUtils.unFlip(p);
 }
 
 // Draw board on canvas
-function drawBoard(p, isFlipped) {
+function drawBoard(p) {
     p.noStroke();
 
     // Draw small stroke around board
@@ -107,8 +110,22 @@ function highlightSquares(p, placements, color, isFlipped) {
     if (isFlipped) GraphicsUtils.unFlip(p);
 }
 
+// Highlight a square on the board
+function highlightLastMoveSquares(p, pastMoves, isFlipped) {
+    // Highlight each from and to squares of last move on the board
+    if (!pastMoves.length) return;
+    const lastMove = pastMoves[chessBoard.pastMoves.length - 1];
+    if (!lastMove?.movingPiece) return;
+    const lastMovePlacements = [new Placement(lastMove.movingPiece.file, lastMove.movingPiece.rank), new Placement(lastMove.file, lastMove.rank)];
+
+    if (isFlipped) GraphicsUtils.flipBoard(p);
+    BoardGraphics.highlightSquares(p, lastMovePlacements, COLORS.MOVES.LAST_MOVE, isFlipped);
+    if (isFlipped) GraphicsUtils.unFlip(p);
+}
+
 export const BoardGraphics = {
     drawBorder,
     drawBoard,
     highlightSquares,
+    highlightLastMoveSquares
 };

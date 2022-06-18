@@ -78,7 +78,6 @@ export class Board {
         this.resetGame(initialFENString);
     }
 
-    // TODO: Check string 'rnb1kbnr/pppp3p/6p1/1N3pq1/6P1/5p1B/PPPPP2P/RNBQKR b -Qkq - 1 16'
     resetGame(initialFENString) {
         // Set up initial board
         this.players.forEach((player) => player.clearCapturedPieces());
@@ -110,7 +109,7 @@ export class Board {
         this.pastMoves = Array((boardData.fullMoveCount - 1) * 2).fill(null);
         if (!this.isWhiteTurn) this.pastMoves.push(null);
         if (boardData.pastMove) {
-            this.pastMoves[this.pastMoves - 1] = boardData.pastMove;
+            this.pastMoves[this.pastMoves.length - 1] = boardData.pastMove;
         }
     }
 
@@ -256,7 +255,7 @@ export class Board {
         if (lastMove.isPawnPromotion) {
             // Get pawn to promote
             const pawnToPromote = this.pieces.find(
-                (piece) => piece.isWhite === this.isWhiteTurn && piece.TYPE === PieceTypes.PAWN && piece.file === piece.promotionFile,
+                (piece) => piece.isWhite === this.isWhiteTurn && piece.TYPE === PieceTypes.PAWN && piece.rank === piece.promotionRank,
             );
             if (pawnToPromote) {
                 // Create new instance of chosen piece class
@@ -397,7 +396,7 @@ export class Board {
 
     isCheckedBy() {
         if (this.pastMoves.length) {
-            const lastMove = this.pastMoves[this.pastMoves.length - 1]
+            const lastMove = this.pastMoves[this.pastMoves.length - 1];
             if (lastMove.isChecking) {
                 return lastMove.movingPiece;
             }
@@ -503,7 +502,7 @@ export class Board {
             /**
              * Block check
              */
-            // Get king
+                // Get king
             const king = this.pieces.find((piece) => piece.isWhite === movingPiece.isWhite && piece.TYPE === PieceTypes.KING);
             // Get moves of pieces targeting king
             const placementsTargetingKing = this.getPlacementsBetweenAttackersAndPiece(king);
@@ -621,10 +620,10 @@ export class Board {
                 )
                 .find((piece) => !!piece);
             if (foundPiece) {
-                // Get attacking space placement where the rank is the same as the attack piece's rank
+                // Get attacking space placement where the file is the same as the attacked piece's file
                 const attackingPlacement = movingPiece
                     .getAttackingSpaces()
-                    .find((attackingSpace) => attackingSpace.rank === foundPiece.rank);
+                    .find((attackingSpace) => attackingSpace.file === foundPiece.file);
                 // Create en passant move and add to multiPieceMoves
                 const enPassantMove = new Move(attackingPlacement.file, attackingPlacement.rank, movingPiece);
                 enPassantMove.setEnPassantPawn(foundPiece);
@@ -640,29 +639,29 @@ export class Board {
             );
 
             rooks = rooks.filter((rook) => {
-                // Check if rook is on same file as king
-                if (rook.file !== movingPiece.file) {
+                // Check if rook is on same rank as king
+                if (rook.rank !== movingPiece.rank) {
                     return false;
                 }
 
                 // Calculate minimum and maximum rank of king and rook
-                const minRank = Math.min(rook.rank, movingPiece.rank);
-                const maxRank = Math.max(rook.rank, movingPiece.rank);
+                const minFile = Math.min(rook.file, movingPiece.file);
+                const maxFile = Math.max(rook.file, movingPiece.file);
 
                 // Keep rooks that have no other pieces between it and king
                 const hasPiecesBetween = this.pieces.some(
-                    (piece) => piece.file === rook.file && piece.rank > minRank && piece.rank < maxRank,
+                    (piece) => piece.rank === rook.rank && piece.file > minFile && piece.file < maxFile,
                 );
                 if (hasPiecesBetween) {
                     return false;
                 }
 
-                // Keep rooks that have aren't under attack and have no attacked spaces between rook and king
+                // Keep rooks that aren't under attack and have no attacked spaces between rook and king
                 // Generate spaces between rook and king, including rook and king placements
                 const horizontalSpaces = PlacementUtils.generateHorizontalPlacementsBetween(
-                    rook.file,
                     rook.rank,
-                    movingPiece.rank,
+                    rook.file,
+                    movingPiece.file,
                     true,
                     true,
                 );
@@ -673,12 +672,11 @@ export class Board {
 
             // Generate castling moves for remaining rooks
             let castleMoves = rooks.map((rook) => {
-                let offset = rook.rank < movingPiece.rank ? -1 : 1;
-                const castleMove = new Move(movingPiece.file, movingPiece.rank + 2 * offset, movingPiece);
-                castleMove.setCastlingMove(rook, new Placement(rook.file, movingPiece.rank + 1 * offset));
+                let offset = rook.file < movingPiece.file ? -1 : 1;
+                const castleMove = new Move(movingPiece.file + 2 * offset, movingPiece.rank, movingPiece);
+                castleMove.setCastlingMove(rook, new Placement(movingPiece.file + 1 * offset, rook.rank));
                 return castleMove;
             });
-
             multiPieceMoves.push(...castleMoves);
         }
 

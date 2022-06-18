@@ -138,11 +138,11 @@ function generateBoardFromPGN(pgnString) {
     const board = new Board(whitePlayer, blackPlayer, fen);
 
     /**
-     * @param{string} from
-     * @param{string} to
-     * @param{string} kingCastle
-     * @param{string} queenCastle
-     * @param{string} fenName
+     * @param {string} from
+     * @param {string} to
+     * @param {string} kingCastle
+     * @param {string} queenCastle
+     * @param {string} fenName
      * @return {{piece, placementToMoveTo: Placement}}
      */
     function getMoveDataFromPGNRegexData(from, to, kingCastle, queenCastle, fenName) {
@@ -153,23 +153,23 @@ function generateBoardFromPGN(pgnString) {
         if (to) {
             let placementToMoveFrom;
             // Convert fen to placements
-            placementToMoveTo = new Placement(+to[1], BoardUtils.fileCharToNumber(to[0]));
+            placementToMoveTo = new Placement(BoardUtils.fileCharToNumber(to[0]), +to[1]);
             if (from?.length > 0) {
                 let file, rank;
                 // Check if first character is a number
                 if (!isNaN(+from[0])) {
-                    // Set file to number
-                    file = +from[0];
+                    // Set rank to number
+                    rank = +from[0];
                 } else {
-                    // Set rank to character
-                    rank = from[0];
+                    // Set file to character
+                    file = from[0];
                     // Check if second character is a number
                     if (!isNaN(+from[1])) {
-                        // Set file to second character
-                        file = +from[1];
+                        // Set rank to second character
+                        rank = +from[1];
                     }
                 }
-                placementToMoveFrom = new Placement(file, BoardUtils.fileCharToNumber(rank));
+                placementToMoveFrom = new Placement(BoardUtils.fileCharToNumber(file), rank);
             }
 
             // Find move to get piece of
@@ -180,17 +180,22 @@ function generateBoardFromPGN(pgnString) {
                     move.file === placementToMoveTo.file && // Filter by file to move to
                     move.rank === placementToMoveTo.rank && // Filter by rank to move to
                     (!placementToMoveFrom || // Filter by placement to move from if present
-                        (move.movingPiece.file === placementToMoveFrom.file && move.movingPiece.rank === placementToMoveFrom.rank)),
+                        (placementToMoveFrom.rank &&
+                            placementToMoveFrom.file &&
+                            move.movingPiece.file === placementToMoveFrom.file &&
+                            move.movingPiece.rank === placementToMoveFrom.rank) ||
+                        move.movingPiece.file === placementToMoveFrom.file ||
+                        move.movingPiece.rank === placementToMoveFrom.rank),
             );
         } else if (kingCastle) {
             // Find king side castling move
             foundMove = board.currentPlayerMoves.find(
-                (move) => move.castlingMove && move.movingPiece.rank < move.castlingMove.movingPiece.rank,
+                (move) => move.castlingMove && move.movingPiece.file < move.castlingMove.movingPiece.file,
             );
         } else if (queenCastle) {
             // Find queen side castling move
             foundMove = board.currentPlayerMoves.find(
-                (move) => move.castlingMove && move.movingPiece.rank > move.castlingMove.movingPiece.rank,
+                (move) => move.castlingMove && move.movingPiece.file > move.castlingMove.movingPiece.file,
             );
         }
 
@@ -285,7 +290,7 @@ function generateFENForMove(move) {
     // Generate move notation
     let moveNotation;
     if (move.castlingMove) {
-        if (move.castlingMove.movingPiece.rank < move.movingPiece.rank) {
+        if (move.castlingMove.movingPiece.file < move.movingPiece.file) {
             // Castling queen side
             moveNotation = FENConstants.QUEEN_SIDE_CASTLE_NOTATION;
         } else {
@@ -295,11 +300,11 @@ function generateFENForMove(move) {
     } else {
         const pieceNotation = move.movingPiece.TYPE !== PieceTypes.PAWN ? move.movingPiece.fenName.toUpperCase() : '';
         const captureNotation = move.attackedPiece ? 'x' : '';
-        const rankFromNotation = BoardUtils.fileNumberToChar(move.movingPiece.rank).toLowerCase();
-        const fileFromNotation = `${move.movingPiece.file}`;
-        const rankToNotation = BoardUtils.fileNumberToChar(move.rank).toLowerCase();
-        const fileToNotation = `${move.file}`;
-        moveNotation = `${pieceNotation}${rankFromNotation}${fileFromNotation}${captureNotation}${rankToNotation}${fileToNotation}`;
+        const fileFromNotation = BoardUtils.fileNumberToChar(move.movingPiece.file).toLowerCase();
+        const rankFromNotation = `${move.movingPiece.rank}`;
+        const fileToNotation = BoardUtils.fileNumberToChar(move.file).toLowerCase();
+        const rankToNotation = `${move.rank}`;
+        moveNotation = `${pieceNotation}${fileFromNotation}${rankFromNotation}${captureNotation}${fileToNotation}${rankToNotation}`;
     }
 
     // Check if is pawn promotion
@@ -369,6 +374,7 @@ function generateFENFromBoard(pieces, isWhiteTurn, halfMoveCount, currentPlayerM
             return castlingString;
         }, '');
     }
+
     let castlingString = addCastlingPossibility(pieces, true);
     castlingString += addCastlingPossibility(pieces, false);
     fenString += ` ${castlingString === '' ? '-' : castlingString}`;
@@ -411,41 +417,41 @@ function generateBoardFromFEN(fenString) {
     // Get en passant move
     const { enPassant } = groups;
     let enPassantFile, enPassantRank;
-    if (enPassant) {
-        enPassantRank = BoardUtils.fileCharToNumber(enPassant.charAt(0));
-        enPassantFile = +enPassant.charAt(1);
+    if (enPassant !== '-') {
+        enPassantFile = BoardUtils.fileCharToNumber(enPassant[0]);
+        enPassantRank = +enPassant[1];
     }
 
     // Create pieces and create en passant move if needed
     const pieces = [];
-    let enPassantMove;
-    let currentFile = FILES;
-    let currentRank = 1;
-    // Loop over each file
-    groups.piecePlacement.split('/').forEach((filePlacement) => {
-        // Loop over ranks
-        filePlacement.split('').forEach((rankMark) => {
-            // Check if is rank skip or piece marking
-            if (!isNaN(+rankMark)) {
-                // Add rank skip to current rank
-                currentRank += +rankMark;
+    let enPassantableMove;
+    let currentRank = RANKS;
+    let currentFile = 1;
+    // Loop over each rank
+    groups.piecePlacement.split('/').forEach((rankPlacement) => {
+        // Loop over files
+        rankPlacement.split('').forEach((fileMark) => {
+            // Check if is file skip or piece marking
+            if (!isNaN(+fileMark)) {
+                // Add file skip to current file
+                currentFile += +fileMark;
             } else {
                 // Get piece color
-                let isWhite = rankMark.toUpperCase() === rankMark;
+                let isWhite = fileMark.toUpperCase() === fileMark;
 
                 // Get piece type
                 let PieceClass;
-                if (['p', 'P'].includes(rankMark)) {
+                if (['p', 'P'].includes(fileMark)) {
                     PieceClass = Pawn;
-                } else if (['r', 'R'].includes(rankMark)) {
+                } else if (['r', 'R'].includes(fileMark)) {
                     PieceClass = Rook;
-                } else if (['n', 'N'].includes(rankMark)) {
+                } else if (['n', 'N'].includes(fileMark)) {
                     PieceClass = Knight;
-                } else if (['b', 'B'].includes(rankMark)) {
+                } else if (['b', 'B'].includes(fileMark)) {
                     PieceClass = Bishop;
-                } else if (['q', 'Q'].includes(rankMark)) {
+                } else if (['q', 'Q'].includes(fileMark)) {
                     PieceClass = Queen;
-                } else if (['k', 'K'].includes(rankMark)) {
+                } else if (['k', 'K'].includes(fileMark)) {
                     PieceClass = King;
                 }
                 // Create piece
@@ -453,18 +459,26 @@ function generateBoardFromFEN(fenString) {
                 // Check current placement has a pawn and an en passant move needs to be generated
                 if (piece.TYPE === PieceTypes.PAWN) {
                     // Check if is pawn first move
-                    let firstMoveFile = piece.isWhite ? 2 : 7;
-                    piece.isFirstMove = piece.file === firstMoveFile;
-                    if (!enPassantMove && enPassantRank === currentRank && currentFile) {
-                        let fileToCheck = currentFile + (isWhite ? -1 : 1);
-                        if (fileToCheck === enPassantFile) {
-                            enPassantMove = new Move(enPassantFile, enPassantRank, piece);
+                    let firstMoveRank = piece.isWhite ? 2 : 7;
+                    piece.isFirstMove = piece.rank === firstMoveRank;
+                    // Check if pawn performed the 'en passantable' move, if available in FEN
+                    if (!enPassantableMove && enPassantFile === currentFile && currentFile) {
+                        // If pawn is white, check if rank below the current pawn is the en passantable rank,
+                        // Otherwise, check if it is the rank above the current pawn
+                        let rankOffset = isWhite ? -1 : 1;
+                        let rankToCheck = currentRank + rankOffset;
+                        if (rankToCheck === enPassantRank) {
+                            // Create en passantable move (pawn moved two ranks up/down)
+                            piece.isFirstMove = true;
+                            piece.rank = enPassantRank + rankOffset;
+                            enPassantableMove = new Move(currentFile, currentRank, piece);
+                            piece.rank = currentRank;
                             piece.isFirstMove = false;
                         }
                     }
                 } else if (piece.TYPE === PieceTypes.ROOK) {
                     // Check if is queen side rook
-                    if (piece.rank === 1) {
+                    if (piece.file === 1) {
                         piece.isFirstMove = piece.isWhite ? canWhiteCastleQueenSide : canDarkCastleQueenSide;
                     } else {
                         piece.isFirstMove = piece.isWhite ? canWhiteCastleKingSide : canDarkCastleKingSide;
@@ -475,13 +489,13 @@ function generateBoardFromFEN(fenString) {
                 pieces.push(piece);
 
                 // Update current rank
-                currentRank++;
+                currentFile++;
             }
         });
 
         // Set new file and reset rank
-        currentFile--;
-        currentRank = 1;
+        currentRank--;
+        currentFile = 1;
     });
 
     // Return data to board
@@ -490,7 +504,7 @@ function generateBoardFromFEN(fenString) {
         isWhiteTurn,
         halfMoveCount,
         fullMoveCount,
-        pastMove: enPassantMove,
+        pastMove: enPassantableMove,
     };
 }
 

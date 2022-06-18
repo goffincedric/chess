@@ -29,7 +29,7 @@ function drawMoves(p, pieces, movingPiece, movingPieceMoves, isFlipped) {
                 // Get piece if present
                 let piece = PieceUtils.getPieceByPlacement(pieces, move.file, move.rank);
                 let rectColor;
-                // Set color depending on if there is no piece or it is an enemy piece
+                // Set color depending on if there is no piece or if it is an enemy piece
                 if (!piece) {
                     rectColor = p.color(COLORS.MOVES.EMPTY);
                 } else if (piece.isWhite !== movingPiece.isWhite) {

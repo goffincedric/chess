@@ -3,8 +3,8 @@ import { FILES, RANKS } from '../constants/boardConstants.js';
 import { Placement } from '../models/placement.js';
 import { RegexConstants } from '../constants/regexConstants.js';
 
-function generateHorizontalPlacements(currentFile, currentRank, limit, includeCurrentPlacement = false) {
-    let horizontals = [];
+function generateVerticalPlacements(currentFile, currentRank, limit, includeCurrentPlacement = false) {
+    let verticals = [];
     let count, rankOffset, rank, placements;
     for (let i = 0; i < 2; i++) {
         // Reset rank and placements
@@ -25,14 +25,14 @@ function generateHorizontalPlacements(currentFile, currentRank, limit, includeCu
             rank = currentRank + count * rankOffset;
         } while (BoardUtils.isOnBoard(currentFile, rank) && (!limit || count <= limit));
         // Check for placements to add
-        if (placements.length) horizontals.push(placements);
+        if (placements.length) verticals.push(placements);
     }
 
-    return horizontals;
+    return verticals;
 }
 
-function generateVerticalPlacements(currentFile, currentRank, limit, includeCurrentPlacement = false) {
-    let verticals = [];
+function generateHorizontalPlacements(currentFile, currentRank, limit, includeCurrentPlacement = false) {
+    let horizontals = [];
     let count, fileOffset, file, placements;
     for (let i = 0; i < 2; i++) {
         // Reset file and placements
@@ -53,10 +53,10 @@ function generateVerticalPlacements(currentFile, currentRank, limit, includeCurr
             file = currentFile + count * fileOffset;
         } while (BoardUtils.isOnBoard(file, currentRank) && (!limit || count <= limit));
         // Check for placements to add
-        if (placements.length) verticals.push(placements);
+        if (placements.length) horizontals.push(placements);
     }
 
-    return verticals;
+    return horizontals;
 }
 
 function generateDiagonalPlacements(currentFile, currentRank, limit, includeCurrentPlacement = false) {
@@ -90,7 +90,7 @@ function generateDiagonalPlacements(currentFile, currentRank, limit, includeCurr
     return diagonals;
 }
 
-function generateHorizontalPlacementsBetween(currentFile, rank1, rank2, includePlacement1, includePlacement2) {
+function generateVerticalPlacementsBetween(currentFile, rank1, rank2, includePlacement1, includePlacement2) {
     // Calculate smallest rank, largest rank and limit
     const minRank = Math.min(rank1, rank2);
     const maxRank = Math.max(rank1, rank2);
@@ -99,20 +99,20 @@ function generateHorizontalPlacementsBetween(currentFile, rank1, rank2, includeP
     // Check if placements are the same and at least 1 placement is included
     if (limit === 0 && (includePlacement1 || includePlacement2)) return [new Placement(currentFile, rank1)];
 
-    // Generate spaces for each horizontal direction, starting from rank1
-    const horizontalDirections = generateHorizontalPlacements(currentFile, rank1, limit, includePlacement1);
+    // Generate spaces for each vertical direction, starting from rank1
+    const verticalDirections = generateVerticalPlacements(currentFile, rank1, limit, includePlacement1);
 
     // Get direction pointing to rank2
-    const horizontalSpaces = horizontalDirections.find((directionSpaces) => directionSpaces.some((space) => space.rank === rank2));
+    const verticalSpaces = verticalDirections.find((directionSpaces) => directionSpaces.some((space) => space.rank === rank2));
 
     // Check if placement with rank2 needs to be included
-    if (!includePlacement2) horizontalSpaces.pop();
+    if (!includePlacement2) verticalSpaces.pop();
 
     // Return generates spaces
-    return horizontalSpaces ?? [];
+    return verticalSpaces ?? [];
 }
 
-function generateVerticalPlacementsBetween(currentRank, file1, file2, includePlacement1, includePlacement2) {
+function generateHorizontalPlacementsBetween(currentRank, file1, file2, includePlacement1, includePlacement2) {
     // Calculate smallest file, largest file and limit
     const minFile = Math.min(file1, file2);
     const maxFile = Math.max(file1, file2);
@@ -121,17 +121,17 @@ function generateVerticalPlacementsBetween(currentRank, file1, file2, includePla
     // Check if placements are the same and at least 1 placement is included
     if (limit === 0 && (includePlacement1 || includePlacement2)) return [new Placement(file1, currentRank)];
 
-    // Generate spaces for each vertical direction, starting from file1
-    const verticalDirections = generateVerticalPlacements(file1, currentRank, limit, includePlacement1);
+    // Generate spaces for each horizontal direction, starting from file1
+    const horizontalDirections = generateHorizontalPlacements(file1, currentRank, limit, includePlacement1);
 
     // Get direction pointing to file2
-    const verticalSpaces = verticalDirections.find((directionSpaces) => directionSpaces.some((space) => space.file === file2));
+    const horizontalSpaces = horizontalDirections.find((directionSpaces) => directionSpaces.some((space) => space.file === file2));
 
     // Check if placement with file2 needs to be included
-    if (!includePlacement2) verticalSpaces?.pop();
+    if (!includePlacement2) horizontalSpaces?.pop();
 
     // Return generates spaces
-    return verticalSpaces ?? [];
+    return horizontalSpaces ?? [];
 }
 
 function generateDiagonalPlacementsBetween(file1, rank1, file2, rank2, includePlacement1, includePlacement2) {
@@ -174,11 +174,11 @@ function generatePlacementsBetweenPlacements(file1, rank1, file2, rank2, include
     const dRank = maxRank - minRank;
 
     // Check if is horizontal move
-    if (dFile === 0 && dRank > 0) {
-        return generateHorizontalPlacementsBetween(file1, rank1, rank2, includePlacement1, includePlacement2);
-    } else if (dFile > 0 && dRank === 0) {
+    if (dFile > 0 && dRank === 0) {
+        return generateHorizontalPlacementsBetween(rank1, file1, file2, includePlacement1, includePlacement2);
+    } else if (dFile === 0 && dRank > 0) {
         // Check if is vertical move
-        return generateVerticalPlacementsBetween(rank1, file1, file2, includePlacement1, includePlacement2);
+        return generateVerticalPlacementsBetween(file1, rank1, rank2, includePlacement1, includePlacement2);
     } else {
         return generateDiagonalPlacementsBetween(file1, rank1, file2, rank2, includePlacement1, includePlacement2);
     }
@@ -197,9 +197,9 @@ function generatePlacementsLineThroughPlacements(file1, rank1, file2, rank2) {
     let linePlacements = [];
 
     // Check if is horizontal move
-    if (dFile === 0 && dRank > 0) {
+    if (dFile > 0 && dRank === 0) {
         linePlacements = generateHorizontalPlacements(file1, 1, RANKS, true).flat();
-    } else if (dFile > 0 && dRank === 0) {
+    } else if (dFile === 0 && dRank > 0) {
         // Check if is vertical move
         linePlacements = generateVerticalPlacements(1, rank1, FILES, true).flat();
     } else if (dFile === dRank) {

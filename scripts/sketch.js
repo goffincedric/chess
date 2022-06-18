@@ -130,11 +130,7 @@ export function setup(p, loops = true) {
     // Draw chess board
     BoardGraphics.drawBoard(p, flipBoard);
     // Highlight squares of last move
-    if (chessBoard.pastMoves.length) {
-        const lastMove = chessBoard.pastMoves[chessBoard.pastMoves.length - 1];
-        const lastMovePlacements = [new Placement(lastMove.movingPiece.file, lastMove.movingPiece.rank), new Placement(lastMove.file, lastMove.rank)];
-        BoardGraphics.highlightSquares(p, lastMovePlacements, COLORS.MOVES.LAST_MOVE, flipBoard);
-    }
+    BoardGraphics.highlightLastMoveSquares(p, chessBoard.pastMoves, flipBoard);
 
     // Draw info panel
     drawInfoPanelContents(p);
@@ -168,11 +164,7 @@ export function draw(p) {
     BoardGraphics.drawBoard(p);
 
     // Highlight squares of last move
-    if (chessBoard.pastMoves.length) {
-        const lastMove = chessBoard.pastMoves[chessBoard.pastMoves.length - 1];
-        const lastMovePlacements = [new Placement(lastMove.movingPiece.file, lastMove.movingPiece.rank), new Placement(lastMove.file, lastMove.rank)];
-        BoardGraphics.highlightSquares(p, lastMovePlacements, COLORS.MOVES.LAST_MOVE, flipBoard);
-    }
+    BoardGraphics.highlightLastMoveSquares(p, chessBoard.pastMoves, flipBoard);
 
     // Draw enemy moves
     // MoveGraphics.drawEnemyMoves(p, chessBoard.enemyAttacks, flipBoard);
@@ -226,7 +218,7 @@ function drawInfoPanelContents(p) {
     InfoPanelGraphics.drawPastMoves(p, chessBoard.pastMoves);
     // Draw action buttons
     const canResign = chessBoard.gameState === GameConstants.States.PLAYING;
-    const canUndo = chessBoard.gameState === GameConstants.States.PLAYING && Settings.getSetting(Settings.Names.EnableMoveUndo); // TODO: Can undo?
+    const canUndo = chessBoard.gameState === GameConstants.States.PLAYING && Settings.getSetting(Settings.Names.EnableMoveUndo);
     InfoPanelGraphics.drawActionButtons(p, canResign, canUndo);
 }
 
@@ -326,8 +318,8 @@ export function movePieceByFEN(fenMove) {
     const FENMoveRegex = RegexConstants.FEN_MOVE;
     if (FENMoveRegex.test(from) && FENMoveRegex.test(to)) {
         // Convert fen to placements
-        const fromPlacement = new Placement(+from[1], BoardUtils.fileCharToNumber(from[0]));
-        const toPlacement = new Placement(+to[1], BoardUtils.fileCharToNumber(to[0]));
+        const fromPlacement = new Placement(BoardUtils.fileCharToNumber(from[0]), +from[1]);
+        const toPlacement = new Placement(BoardUtils.fileCharToNumber(to[0]), +to[1]);
 
         // Get move linked to from and to placements
         const move = MovesUtils.getMoveByPlacements(chessBoard.currentPlayerMoves, fromPlacement, toPlacement);
@@ -401,7 +393,7 @@ if (EnvironmentUtils.isBrowserEnvironment()) {
         p.mousePressed = () => mousePressed(p);
         p.mouseReleased = () => mouseReleased(p);
     });
-    window.evaluateBestMove = evaluateBestMove;
+    window.movePieceByFEN = movePieceByFEN;
 }
 
 /**
@@ -409,7 +401,4 @@ if (EnvironmentUtils.isBrowserEnvironment()) {
  *  * Add close button to the game options dialog
  *  * Pick starting color
  *  * Add threefold move repetition check
- *  * AI:
- *    - Don't allow piece to be put back
- *    - Add iterative deepening to AI (calculate best possible state and return path to that state, and recalculate deeper from that point)
  */

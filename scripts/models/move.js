@@ -53,7 +53,7 @@ export class Move extends Placement {
     constructor(file, rank, movingPiece, isAttacking = true) {
         super(file, rank);
         this.movingPiece = movingPiece;
-        this.isPawnPromotion = movingPiece.TYPE === PieceTypes.PAWN && movingPiece.promotionFile === file;
+        this.isPawnPromotion = movingPiece.TYPE === PieceTypes.PAWN && movingPiece.promotionRank === rank;
         this.isAttacking = isAttacking;
     }
 

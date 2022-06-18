@@ -9,8 +9,8 @@ function positionToPlacement(x, y, isFlipped) {
         normalizedX = BOARD_OFFSET * 2 + BOARD_SIZE - x;
         normalizedY = BOARD_OFFSET * 2 + BOARD_SIZE - y;
     }
-    const rank = Math.floor((normalizedX - BOARD_OFFSET) / SQUARE_SIZE) + 1;
-    const file = FILES - Math.floor(Math.abs(normalizedY - BOARD_OFFSET + 1) / SQUARE_SIZE);
+    const file = Math.floor((normalizedX - BOARD_OFFSET) / SQUARE_SIZE) + 1;
+    const rank = RANKS - Math.floor(Math.abs(normalizedY - BOARD_OFFSET + 1) / SQUARE_SIZE);
     return new Placement(file, rank);
 }
 
@@ -21,8 +21,8 @@ function placementToPosition(file, rank, isFlipped) {
         normalizedRank = RANKS - rank + 1;
         normalizedFile = FILES - file + 1;
     }
-    const x = (normalizedRank - 1) * SQUARE_SIZE + BOARD_OFFSET;
-    const y = (FILES - normalizedFile) * SQUARE_SIZE + BOARD_OFFSET;
+    const x = (normalizedFile - 1) * SQUARE_SIZE + BOARD_OFFSET;
+    const y = (RANKS - normalizedRank) * SQUARE_SIZE + BOARD_OFFSET;
     return new Position(x, y);
 }
 

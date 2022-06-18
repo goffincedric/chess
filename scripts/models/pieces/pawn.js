@@ -4,11 +4,11 @@ import { Move } from '../move.js';
 import { PieceTypes } from '../../constants/pieceConstants.js';
 
 export class Pawn extends Piece {
-    promotionFile;
+    promotionRank;
 
     constructor(file, rank, isWhite, isFirstMove = true) {
         super(file, rank, isWhite, 'p', PieceTypes.PAWN, true, isFirstMove);
-        this.promotionFile = this.isWhite ? 8 : 1;
+        this.promotionRank = this.isWhite ? 8 : 1;
     }
 
     getMoves() {
@@ -16,9 +16,9 @@ export class Pawn extends Piece {
         const offset = this.isWhite ? 1 : -1;
 
         // Generate vertical placements
-        const verticalPlacements = [new Placement(this.file + 1 * offset, this.rank)];
+        const verticalPlacements = [new Placement(this.file, this.rank + 1 * offset)];
         if (this.isFirstMove) {
-            verticalPlacements.push(new Placement(this.file + 2 * offset, this.rank));
+            verticalPlacements.push(new Placement(this.file, this.rank + 2 * offset));
         }
         // Convert placements to moves
         const verticalMoves = verticalPlacements.map((placement) => new Move(placement.file, placement.rank, this, false));
@@ -40,11 +40,11 @@ export class Pawn extends Piece {
         const offset = this.isWhite ? 1 : -1;
 
         // Get attacking spaces and return
-        return [new Placement(this.file + 1 * offset, this.rank + 1), new Placement(this.file + 1 * offset, this.rank - 1)];
+        return [new Placement(this.file +1, this.rank + 1 * offset), new Placement(this.file - 1, this.rank + 1 * offset)];
     }
 
     getEnPassantSpaces() {
         // Get spaces to check for en passant pieces and return
-        return [new Placement(this.file, this.rank + 1), new Placement(this.file, this.rank - 1)];
+        return [new Placement(this.file + 1, this.rank), new Placement(this.file - 1, this.rank)];
     }
 }

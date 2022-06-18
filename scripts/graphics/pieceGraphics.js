@@ -53,8 +53,8 @@ function drawPawnPromotion(p, pawnToPromote, isWhiteTurn, isFlipped) {
     if (!pawnPromotion.hasSetPiecePositions) {
         // Set piece positions
         promotionPieces.forEach((piece, index) => {
-            const file = pawnToPromote.file + (isFlipped ? index : -index);
-            piece.setPlacement(file, pawnToPromote.rank);
+            const rank = pawnToPromote.rank + (isFlipped ? index : -index);
+            piece.setPlacement(pawnToPromote.file, rank);
         });
         pawnPromotion.hasSetPiecePositions = true;
     }
