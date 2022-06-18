@@ -5,7 +5,7 @@ const getMoveTextForSide = (side) =>
         FENConstants.QUEEN_SIDE_CASTLE_NOTATION
     })|(?<${side.toLowerCase()}KingCastle>${FENConstants.KING_SIDE_CASTLE_NOTATION})`;
 export const RegexConstants = {
-    FEN_MOVE: /^[A-H][1-8]$/i,
+    FEN_MOVE: /^(?<file>[A-H])(?<rank>[1-8])$/i,
     FEN_STRING:
         /^(?<piecePlacement>([pnbrqkPNBRQK1-8]{1,8}\/?){8})\s+(?<sideToMove>[bw])\s?(?<castling>-|K?Q?k?q?)\s+(?<enPassant>-|[a-h][3-6])\s+(?<halfMoveCount>\d+)\s+(?<fullMoveCount>\d+)\s*$/,
     PGN_MOVETEXT_MOVE: (side) => new RegExp(getMoveTextForSide(side)),

@@ -395,6 +395,16 @@ export class Board {
         return this.getPlacementsBetweenAttackersAndPiece(king).length > 0;
     }
 
+    isCheckedBy() {
+        if (this.pastMoves.length) {
+            const lastMove = this.pastMoves[this.pastMoves.length - 1]
+            if (lastMove.isChecking) {
+                return lastMove.movingPiece;
+            }
+        }
+        return null;
+    }
+
     /**
      *
      * @param {Piece} movingPiece
@@ -499,6 +509,7 @@ export class Board {
             const placementsTargetingKing = this.getPlacementsBetweenAttackersAndPiece(king);
             // Check if king is under attack
             if (placementsTargetingKing.length > 0) {
+                // TODO: Set isChecking on move generation
                 // Set past move as checking
                 if (this.pastMoves.length > 0) {
                     this.pastMoves[this.pastMoves.length - 1].isChecking = true;

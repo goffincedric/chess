@@ -153,7 +153,7 @@ function generateBoardFromPGN(pgnString) {
         if (to) {
             let placementToMoveFrom;
             // Convert fen to placements
-            placementToMoveTo = new Placement(+to[1], BoardUtils.rankCharToNumber(to[0]));
+            placementToMoveTo = new Placement(+to[1], BoardUtils.fileCharToNumber(to[0]));
             if (from?.length > 0) {
                 let file, rank;
                 // Check if first character is a number
@@ -169,7 +169,7 @@ function generateBoardFromPGN(pgnString) {
                         file = +from[1];
                     }
                 }
-                placementToMoveFrom = new Placement(file, BoardUtils.rankCharToNumber(rank));
+                placementToMoveFrom = new Placement(file, BoardUtils.fileCharToNumber(rank));
             }
 
             // Find move to get piece of
@@ -295,9 +295,9 @@ function generateFENForMove(move) {
     } else {
         const pieceNotation = move.movingPiece.TYPE !== PieceTypes.PAWN ? move.movingPiece.fenName.toUpperCase() : '';
         const captureNotation = move.attackedPiece ? 'x' : '';
-        const rankFromNotation = BoardUtils.rankNumberToChar(move.movingPiece.rank).toLowerCase();
+        const rankFromNotation = BoardUtils.fileNumberToChar(move.movingPiece.rank).toLowerCase();
         const fileFromNotation = `${move.movingPiece.file}`;
-        const rankToNotation = BoardUtils.rankNumberToChar(move.rank).toLowerCase();
+        const rankToNotation = BoardUtils.fileNumberToChar(move.rank).toLowerCase();
         const fileToNotation = `${move.file}`;
         moveNotation = `${pieceNotation}${rankFromNotation}${fileFromNotation}${captureNotation}${rankToNotation}${fileToNotation}`;
     }
@@ -375,7 +375,7 @@ function generateFENFromBoard(pieces, isWhiteTurn, halfMoveCount, currentPlayerM
 
     // Add en passant availability
     const enPassantMove = currentPlayerMoves.find((move) => move.isEnPassant);
-    fenString += ` ${enPassantMove ? BoardUtils.rankNumberToChar(enPassantMove.rank).toLowerCase() + enPassantMove.file : '-'}`;
+    fenString += ` ${enPassantMove ? BoardUtils.fileNumberToChar(enPassantMove.rank).toLowerCase() + enPassantMove.file : '-'}`;
 
     // Add half move count
     fenString += ` ${halfMoveCount}`;
@@ -412,7 +412,7 @@ function generateBoardFromFEN(fenString) {
     const { enPassant } = groups;
     let enPassantFile, enPassantRank;
     if (enPassant) {
-        enPassantRank = BoardUtils.rankCharToNumber(enPassant.charAt(0));
+        enPassantRank = BoardUtils.fileCharToNumber(enPassant.charAt(0));
         enPassantFile = +enPassant.charAt(1);
     }
 

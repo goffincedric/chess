@@ -1,6 +1,7 @@
 import { BoardUtils } from './boardUtils.js';
 import { FILES, RANKS } from '../constants/boardConstants.js';
 import { Placement } from '../models/placement.js';
+import { RegexConstants } from '../constants/regexConstants.js';
 
 function generateHorizontalPlacements(currentFile, currentRank, limit, includeCurrentPlacement = false) {
     let horizontals = [];
@@ -302,6 +303,13 @@ function filterPlacementsInCommon(placements, placementsToCheck, keepPlacements)
     placementIndicesToRemove.forEach((index) => placements.splice(index, 1));
 }
 
+// Generates a placement from a fen string
+function fenToPlacement(fenString) {
+    const regexResult = RegexConstants.FEN_MOVE.exec(fenString);
+    let { file, rank } = regexResult.groups;
+    return new Placement(+rank, BoardUtils.fileCharToNumber(file));
+}
+
 export const PlacementUtils = {
     generateHorizontalPlacements,
     generateVerticalPlacements,
@@ -314,4 +322,5 @@ export const PlacementUtils = {
     removeDuplicatePlacements,
     hasPlacementsInCommon,
     filterPlacementsInCommon,
+    fenToPlacement,
 };

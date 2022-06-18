@@ -26,16 +26,16 @@ function placementToPosition(file, rank, isFlipped) {
     return new Position(x, y);
 }
 
-function rankCharToNumber(rankChar) {
-    if (rankChar) {
-        const upperCaseRank = rankChar.toUpperCase();
-        return upperCaseRank.charCodeAt(0) - 64;
+function fileCharToNumber(fileChar) {
+    if (fileChar) {
+        const upperCaseFile = fileChar.toUpperCase();
+        return upperCaseFile.charCodeAt(0) - 64;
     }
     return null;
 }
 
-function rankNumberToChar(rankNumber) {
-    return String.fromCharCode(64 + rankNumber);
+function fileNumberToChar(fileNumber) {
+    return String.fromCharCode(64 + fileNumber);
 }
 
 function isOnBoard(file, rank) {
@@ -49,8 +49,8 @@ function isLightSquare(file, rank) {
 export const BoardUtils = {
     positionToPlacement,
     placementToPosition,
-    rankCharToNumber,
-    rankNumberToChar,
+    fileCharToNumber,
+    fileNumberToChar,
     isOnBoard,
     isLightSquare,
 };

@@ -133,10 +133,8 @@ export function setup(p, loops = true) {
     if (chessBoard.pastMoves.length) {
         const lastMove = chessBoard.pastMoves[chessBoard.pastMoves.length - 1];
         const lastMovePlacements = [new Placement(lastMove.movingPiece.file, lastMove.movingPiece.rank), new Placement(lastMove.file, lastMove.rank)];
-        console.log(lastMovePlacements);
         BoardGraphics.highlightSquares(p, lastMovePlacements, COLORS.MOVES.LAST_MOVE, flipBoard);
     }
-
 
     // Draw info panel
     drawInfoPanelContents(p);
@@ -173,7 +171,6 @@ export function draw(p) {
     if (chessBoard.pastMoves.length) {
         const lastMove = chessBoard.pastMoves[chessBoard.pastMoves.length - 1];
         const lastMovePlacements = [new Placement(lastMove.movingPiece.file, lastMove.movingPiece.rank), new Placement(lastMove.file, lastMove.rank)];
-        console.log(lastMovePlacements);
         BoardGraphics.highlightSquares(p, lastMovePlacements, COLORS.MOVES.LAST_MOVE, flipBoard);
     }
 
@@ -329,8 +326,8 @@ export function movePieceByFEN(fenMove) {
     const FENMoveRegex = RegexConstants.FEN_MOVE;
     if (FENMoveRegex.test(from) && FENMoveRegex.test(to)) {
         // Convert fen to placements
-        const fromPlacement = new Placement(+from[1], BoardUtils.rankCharToNumber(from[0]));
-        const toPlacement = new Placement(+to[1], BoardUtils.rankCharToNumber(to[0]));
+        const fromPlacement = new Placement(+from[1], BoardUtils.fileCharToNumber(from[0]));
+        const toPlacement = new Placement(+to[1], BoardUtils.fileCharToNumber(to[0]));
 
         // Get move linked to from and to placements
         const move = MovesUtils.getMoveByPlacements(chessBoard.currentPlayerMoves, fromPlacement, toPlacement);
