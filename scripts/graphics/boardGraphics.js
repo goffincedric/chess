@@ -114,7 +114,7 @@ function highlightSquares(p, placements, color, isFlipped) {
 function highlightLastMoveSquares(p, pastMoves, isFlipped) {
     // Highlight each from and to squares of last move on the board
     if (!pastMoves.length) return;
-    const lastMove = pastMoves[chessBoard.pastMoves.length - 1];
+    const lastMove = pastMoves[pastMoves.length - 1];
     if (!lastMove?.movingPiece) return;
     const lastMovePlacements = [new Placement(lastMove.movingPiece.file, lastMove.movingPiece.rank), new Placement(lastMove.file, lastMove.rank)];
 

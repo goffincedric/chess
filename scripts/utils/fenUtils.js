@@ -180,12 +180,14 @@ function generateBoardFromPGN(pgnString) {
                     move.file === placementToMoveTo.file && // Filter by file to move to
                     move.rank === placementToMoveTo.rank && // Filter by rank to move to
                     (!placementToMoveFrom || // Filter by placement to move from if present
-                        (placementToMoveFrom.rank &&
+                        (placementToMoveFrom.rank && // If placementToMoveFrom file and rank are available, use those
                             placementToMoveFrom.file &&
                             move.movingPiece.file === placementToMoveFrom.file &&
-                            move.movingPiece.rank === placementToMoveFrom.rank) ||
-                        move.movingPiece.file === placementToMoveFrom.file ||
-                        move.movingPiece.rank === placementToMoveFrom.rank),
+                            move.movingPiece.rank === placementToMoveFrom.rank) &&
+                        (!placementToMoveFrom.file || // If only/no file or rank is available, find by file or rank only
+                            !placementToMoveFrom.rank ||
+                            move.movingPiece.file === placementToMoveFrom.file ||
+                            move.movingPiece.rank === placementToMoveFrom.rank)),
             );
         } else if (kingCastle) {
             // Find king side castling move
@@ -341,13 +343,14 @@ function generateFENFromBoard(pieces, isWhiteTurn, halfMoveCount, currentPlayerM
         }
     }
 
-    // Loop over pieces
-    for (let file = FILES; file > 0; file--) {
-        if (file !== FILES) {
+    // Loop over ranks from top to bottom
+    for (let rank = RANKS; rank > 0; rank--) {
+        if (rank !== RANKS) {
             addPossibleSkipCount();
             fenString += '/';
         }
-        for (let rank = 1; rank <= RANKS; rank++) {
+        // Loop over files from left to right
+        for (let file = 1; file <= FILES; file++) {
             foundPiece = pieces.find((piece) => piece.file === file && piece.rank === rank);
             if (foundPiece) {
                 addPossibleSkipCount();

@@ -502,7 +502,7 @@ export class Board {
             /**
              * Block check
              */
-                // Get king
+            // Get king
             const king = this.pieces.find((piece) => piece.isWhite === movingPiece.isWhite && piece.TYPE === PieceTypes.KING);
             // Get moves of pieces targeting king
             const placementsTargetingKing = this.getPlacementsBetweenAttackersAndPiece(king);

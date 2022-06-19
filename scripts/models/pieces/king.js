@@ -16,8 +16,8 @@ export class King extends Piece {
         let diagonalPlacements = PlacementUtils.generateDiagonalPlacements(this.file, this.rank, 1);
 
         // Convert to moves
-        const horizontalMoves = horizontalPlacements.map(diagonalDirection => diagonalDirection.map(placement => new Move(placement.file, placement.rank, this)));
-        const verticalMoves = verticalPlacements.map(diagonalDirection => diagonalDirection.map(placement => new Move(placement.file, placement.rank, this)));
+        const horizontalMoves = horizontalPlacements.map(horizontalDirection => horizontalDirection.map(placement => new Move(placement.file, placement.rank, this)));
+        const verticalMoves = verticalPlacements.map(verticalDirection => verticalDirection.map(placement => new Move(placement.file, placement.rank, this)));
         const diagonalMoves = diagonalPlacements.map(diagonalDirection => diagonalDirection.map(placement => new Move(placement.file, placement.rank, this)));
 
         // Return categorised moves

@@ -197,11 +197,11 @@ function generatePlacementsLineThroughPlacements(file1, rank1, file2, rank2) {
     let linePlacements = [];
 
     // Check if is horizontal move
-    if (dFile > 0 && dRank === 0) {
-        linePlacements = generateHorizontalPlacements(file1, 1, RANKS, true).flat();
-    } else if (dFile === 0 && dRank > 0) {
+    if (dRank === 0 && dFile > 0) {
+        linePlacements = generateHorizontalPlacements(file1, rank1, RANKS, true).flat();
+    } else if (dRank > 0 && dFile === 0) {
         // Check if is vertical move
-        linePlacements = generateVerticalPlacements(1, rank1, FILES, true).flat();
+        linePlacements = generateVerticalPlacements(file1, rank1, FILES, true).flat();
     } else if (dFile === dRank) {
         // Check if placement is the same
         if (file1 === file2 && rank1 === rank2) {

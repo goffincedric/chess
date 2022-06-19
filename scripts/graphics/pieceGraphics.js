@@ -41,8 +41,9 @@ function drawPawnPromotion(p, pawnToPromote, isWhiteTurn, isFlipped) {
     // Get pieces to promote to
     let promotionPieces = Object.values(isWhiteTurn ? pawnPromotion.whitePieces : pawnPromotion.blackPieces);
 
-    // Draw box
-    const boxPosition = BoardUtils.placementToPosition(pawnToPromote.file, pawnToPromote.rank, isFlipped);
+    // Draw box (4 squares high), always renders op top rank for white, only for black if the board flips
+    let boxRank = pawnToPromote.rank + (isWhiteTurn || isFlipped ? 0 : 3);
+    const boxPosition = BoardUtils.placementToPosition(pawnToPromote.file, boxRank, isFlipped);
     const strokeWidth = 1;
     p.stroke(p.color(COLORS.DARKER));
     p.strokeWeight(strokeWidth);
@@ -53,7 +54,7 @@ function drawPawnPromotion(p, pawnToPromote, isWhiteTurn, isFlipped) {
     if (!pawnPromotion.hasSetPiecePositions) {
         // Set piece positions
         promotionPieces.forEach((piece, index) => {
-            const rank = pawnToPromote.rank + (isFlipped ? index : -index);
+            const rank = boxRank + (isFlipped ? index : -index);
             piece.setPlacement(pawnToPromote.file, rank);
         });
         pawnPromotion.hasSetPiecePositions = true;
